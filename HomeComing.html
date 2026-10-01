@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>De Stille Thuiskomst (prototype)</title>
+<title>HomeComing</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
@@ -202,14 +202,14 @@
 
   <div id="overlay">
     <div class="card">
-      <p class="level" id="levelLabel">Level 1</p>
-      <h1 id="title">De Stille Thuiskomst</h1>
+      <p class="level" id="levelLabel" hidden></p>
+      <h1 id="title">HomeComing</h1>
       <p id="msg">It's 4 a.m. Sneak to your bedroom without waking your roommate.</p>
       <p class="intro-balance"><kbd data-key="left">A</kbd> steps and leans left. <kbd data-key="right">D</kbd> steps and leans right.<br>Keep the balance marker near the middle with short opposite taps. Lean too far and you drift into noisy objects — or stumble.</p>
       <div class="key-guide">
         <span><kbd data-key="fwd">W</kbd> / <kbd data-key="back">S</kbd> walk forward / back</span><span>Mouse / <kbd>↑ ↓ ← →</kbd> look around</span>
         <span>Hold <kbd>C</kbd> sneak · <kbd>Shift</kbd> run</span><span><kbd>Space</kbd> shake off the haze</span>
-        <span>Hold <kbd>B</kbd> suppress a hiccup</span><span><kbd>M</kbd> silence your phone</span>
+        <span>Hold <kbd>B</kbd> suppress a hiccup</span><span><kbd>H</kbd> silence your phone</span>
         <span>Hold <kbd>E</kbd> remove shoes on the mat</span><span>Central prompts show what to do next</span>
       </div>
       <p class="keys">Follow the winding hallway past your roommate's room to your bedroom — the lit door at the very end — before the alarm in 90 seconds. Everything you bump into makes noise. Freeze when your roommate turns over. Headphones recommended.</p>
@@ -1773,7 +1773,7 @@ window.HOUSE_ASSETS = {
       : alarm
         ? 'Your roommate is up and you are still standing in the hallway. Busted.'
         : state.phoneCaught
-          ? 'One buzz was all it took. Silence your phone (M) next time.'
+          ? 'One buzz was all it took. Silence your phone (H) next time.'
           : 'Busted. Expect a long talk at breakfast.';
     showDifficultyPicker(true);
     overlay.hidden = false;
@@ -1969,7 +1969,7 @@ window.HOUSE_ASSETS = {
         sfx('head_shake', 0.5);
         flash('You shake your head. Better.');
       }
-      if ((e.key === 'm' || e.key === 'M') && !e.repeat && !player.phoneMuted && player.muteT <= 0) { player.muteT = 0.4; sfx('click', 0.4); flash('Silencing phone…'); }
+      if ((e.key === 'h' || e.key === 'H') && !e.repeat && !player.phoneMuted && player.muteT <= 0) { player.muteT = 0.4; sfx('click', 0.4); flash('Silencing phone…'); }
     }
   });
   window.addEventListener('keyup', e => {
@@ -2004,7 +2004,7 @@ window.HOUSE_ASSETS = {
     build();
     started = true;
     updateGuidance();
-    titleEl.textContent = 'De Stille Thuiskomst';
+    titleEl.textContent = 'HomeComing';
     statusEl.textContent = '';
     overlay.hidden = true;
     lockPointer();
@@ -2013,7 +2013,8 @@ window.HOUSE_ASSETS = {
   // Difficulty buttons start (or restart) the game at that level; R retries the same level
   function showDifficultyPicker(after) {
     const label = DIFFICULTY[difficulty].label;
-    levelLabel.textContent = after ? 'Level 1 · ' + label : 'Level 1';
+    levelLabel.textContent = after ? label : '';
+    levelLabel.hidden = !after;
     diffPrompt.textContent = after ? 'Try again — pick a level (R retries ' + label + ').' : 'How deeply does your roommate sleep tonight?';
     for (const b of diffBtns) b.dataset.current = String(after && b.dataset.diff === difficulty);
   }
@@ -2057,7 +2058,7 @@ window.HOUSE_ASSETS = {
     if (p.hicWarned && !(input.KeyB && p.breath <= 25)) add('hiccup', 90, 'B', input.KeyB && p.breath > 0 ? 'Keep holding' : 'Hold', 'A hiccup is coming', 'Hold until the hiccup passes, then release to breathe.');
     if (s.light > 0) add('freeze', 85, 'STOP', 'Movement', 'Your roommate is turning over', 'Release movement keys. Only make tiny ' + KEY.left + '/' + KEY.right + ' corrections if needed.', 'danger');
     if (p.shoes && Math.hypot(p.x, p.z - 0.7) < 1.4) add('shoes', 40, 'E', 'Hold', p.shoeT > 0 ? 'Taking off your shoes…' : 'Take off your shoes', 'Stay still and centered on the doormat for quieter steps.', 'normal', p.shoeT / 1.8);
-    if (!p.phoneMuted) add('phone', 30, 'M', p.muteT > 0 ? 'Wait' : 'Press', p.muteT > 0 ? 'Silencing your phone…' : 'Silence your phone', 'Keep your friends’ messages from waking your roommate.', 'normal', p.muteT > 0 ? 1 - p.muteT / 1.2 : null);
+    if (!p.phoneMuted) add('phone', 30, 'H', p.muteT > 0 ? 'Wait' : 'Press', p.muteT > 0 ? 'Silencing your phone…' : 'Silence your phone', 'Keep your friends’ messages from waking your roommate.', 'normal', p.muteT > 0 ? 1 - p.muteT / 1.2 : null);
     if (p.x > 11.6 && p.x < 13.6 && p.z > 15.9 && p.z < 18.1) add('door', 55, 'C', 'Hold', 'Sneak through the lit door', 'Move slowly so your bedroom door does not squeak.');
     add('walk', 0, KEY.fwd, 'Walk', zoneOf(p.x, p.z).text, 'Hold C to sneak. ' + KEY.left + ' / ' + KEY.right + ' sidestep and shift your balance.');
     return prompts.sort((a, b) => b.priority - a.priority);
