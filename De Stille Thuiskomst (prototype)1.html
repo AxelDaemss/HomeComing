@@ -1262,11 +1262,10 @@ window.HOUSE_ASSETS = {
       solids.push({ minX: -5.0, maxX: -4.2, minZ: 6.85, maxZ: 7.45, top: 0.7, furniture: true });
     // the roommate: head on the pillow, body under the duvet
     // the roommate: Jouw eigen GLTF model inladen
-    let mixer;
-
     roommateGroup = new THREE.Group(); 
     
     // FIX VOOR DE CRASH: We voegen een leeg object toe als eerste kind (children[0]).
+    // Zo crasht de animatie in de game loop niet terwijl het echte model nog aan het inladen is.
     const dummyNode = new THREE.Object3D();
     roommateGroup.add(dummyNode);
 
@@ -1282,11 +1281,16 @@ window.HOUSE_ASSETS = {
             loadedModel.scale.set(1, 1, 1); 
             
             // 2. Model neerleggen (roteren)
+            // Draai 90 graden over de X-as. (Verander de '-' in een '+' als hij op zijn buik ligt in plaats van op zijn rug)
             loadedModel.rotation.x = -Math.PI / 2; 
+            
+            // Optioneel: Draai hem nog een kwartslag over de Z-as of Y-as als zijn voeten op het kussen liggen
             loadedModel.rotation.z = Math.PI / 2; 
 
             // 3. Positie op het bed finetunen
-            loadedModel.position.set(1.75, 0, 0);
+            // De roommateGroup staat al op (-7.4, 0.68, 11.8), dus dit zijn relatieve stapjes vanaf dat middelpunt.
+            // Speel met deze getallen (bijv. 0.5 of -0.2) tot hij perfect ligt.
+            loadedModel.position.set(0, 0,0);
 
             // Zet schaduwen aan voor je model
             loadedModel.traverse(function (node) {
@@ -1298,14 +1302,6 @@ window.HOUSE_ASSETS = {
 
             // Voeg het geladen model toe aan de roommateGroup
             roommateGroup.add(loadedModel);
-
-            // --- ANIMATIE TOEVOEGEN (Haalt hem uit T-pose) ---
-            if (gltf.animations && gltf.animations.length > 0) {
-                mixer = new THREE.AnimationMixer(loadedModel);
-                // Speel de eerste animatie (index 0) af
-                const action = mixer.clipAction(gltf.animations[0]);
-                action.play();
-            }
         },
         undefined,
         function ( error ) {
