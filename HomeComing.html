@@ -78,7 +78,7 @@
   #attrs { color: var(--dim); font-size: 0.95rem; }
   #guidance[hidden], #balanceHud[hidden], [hidden] { display: none !important; }
   #guidance {
-    position: absolute; bottom: 8.5rem; left: 50%; transform: translateX(-50%);
+    position: absolute; bottom: 6.5rem; left: 50%; transform: translateX(-50%);
     width: min(29rem, calc(100% - 2rem)); text-align: center; pointer-events: none;
     text-shadow: 0 2px 4px #000;
   }
@@ -106,27 +106,27 @@
   #status { min-height: 1.4rem; margin-top: 0.45rem; color: var(--lamp); font-size: 1.1rem; }
   #balanceHud {
     position: absolute; bottom: max(1rem, env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%);
-    width: min(27rem, calc(100% - 2rem)); padding: 0.7rem 1rem 0.55rem; border-radius: 0.9rem;
+    width: min(19rem, calc(100% - 2rem)); padding: 0.45rem 0.7rem 0.4rem; border-radius: 0.7rem;
     background: rgba(10,15,28,0.94); border: 1px solid #a3abc64d; pointer-events: none; text-align: center;
     --balance-color: #a4dbc1;
   }
   #balanceHud[data-level="warning"] { --balance-color: #ffca79; border-color: #ffca7999; }
   #balanceHud[data-level="danger"] { --balance-color: #ff8274; border-color: #ff8274; }
-  .balance-heading { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.45rem; font-size: 1.05rem; }
+  .balance-heading { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem; font-size: 0.8rem; }
   #balanceState { color: var(--balance-color); }
-  .balance-row { display: flex; align-items: center; gap: 0.75rem; }
-  .balance-key { font-size: 1.25rem; min-width: 2rem; border: 1px solid #a3abc6; border-bottom-width: 3px; border-radius: 0.3rem; }
+  .balance-row { display: flex; align-items: center; gap: 0.5rem; }
+  .balance-key { font-size: 0.9rem; min-width: 1.5rem; border: 1px solid #a3abc6; border-bottom-width: 3px; border-radius: 0.3rem; }
   .balance-key[data-recommended="true"] { color: #ffca79; border-color: #ffca79; box-shadow: 0 0 12px #ffb86740; }
   .balance-key[data-pressed="true"] { background: var(--lamp); color: #0d1120; border-color: var(--lamp); }
   .balance-track {
-    position: relative; flex: 1; height: 0.85rem; border-radius: 1rem; border: 1px solid #ffffff35;
+    position: relative; flex: 1; height: 0.6rem; border-radius: 1rem; border: 1px solid #ffffff35;
     background: linear-gradient(90deg, #a63c3c, #bd8948 28%, #425265 39%, #425265 61%, #bd8948 72%, #a63c3c);
   }
   .balance-safe { position: absolute; top: -1px; bottom: -1px; left: 38%; width: 24%; border: 1px solid #a4dbc1; background: #a4dbc145; }
   .balance-center { position: absolute; width: 2px; top: -0.35rem; bottom: -0.35rem; left: calc(50% - 1px); background: #d9efdf; }
-  #balanceMarker { position: absolute; top: 50%; left: 50%; width: 1rem; height: 1.35rem; border: 2px solid #fff2dc; border-radius: 0.4rem; background: var(--balance-color); box-shadow: 0 2px 6px #000; transform: translate(-50%, -50%); }
-  #balanceHint { margin: 0.45rem 0 0; color: var(--balance-color); font-size: 1rem; }
-  .control-strip { border-top: 1px solid #ffffff15; margin-top: 0.45rem; padding-top: 0.4rem; color: #a3abc6; font-size: 0.85rem; }
+  #balanceMarker { position: absolute; top: 50%; left: 50%; width: 0.7rem; height: 1rem; border: 2px solid #fff2dc; border-radius: 0.4rem; background: var(--balance-color); box-shadow: 0 2px 6px #000; transform: translate(-50%, -50%); }
+  #balanceHint { margin: 0.3rem 0 0; color: var(--balance-color); font-size: 0.8rem; }
+  .control-strip { border-top: 1px solid #ffffff15; margin-top: 0.3rem; padding-top: 0.3rem; color: #a3abc6; font-size: 0.7rem; }
   #overlay { z-index: 3; overflow-y: auto; }
   /* Jumpscare: red pulse while he runs at you, white/red flash on impact, then black */
   #scare {
@@ -381,7 +381,7 @@ window.HOUSE_ASSETS = {
   const pmrem = new THREE.PMREMGenerator(renderer);
   scene.environment = pmrem.fromScene(new THREE.RoomEnvironment(), 0.04).texture;
   const ENV_INTENSITY = 0.035;
-  const camera = new THREE.PerspectiveCamera(68, 1, 0.05, 40);
+  const camera = new THREE.PerspectiveCamera(68, 1, 0.1, 40);
   camera.rotation.order = 'YXZ';
 
   function resize() {
@@ -790,17 +790,30 @@ window.HOUSE_ASSETS = {
       return;
     }
     if (kind === 'buzz') {
-      for (let k = 0; k < 3; k++) {
+      // Two-tone message chime, then a vibration rattle against a hard surface
+      for (const [f, dt] of [[1318, 0], [1760, 0.12]]) {
         const o = ac.createOscillator(), gg = ac.createGain();
-        o.type = 'square'; o.frequency.value = 165;
-        const lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 400;
-        o.connect(lp); lp.connect(gg); gg.connect(g);
-        const t0 = t + k * 0.45;
-        gg.gain.setValueAtTime(0.0001, t0); gg.gain.exponentialRampToValueAtTime(1, t0 + 0.02);
-        gg.gain.setValueAtTime(1, t0 + 0.28); gg.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.32);
-        o.start(t0); o.stop(t0 + 0.34);
+        o.type = 'sine'; o.frequency.value = f;
+        o.connect(gg); gg.connect(g);
+        gg.gain.setValueAtTime(0.0001, t + dt); gg.gain.exponentialRampToValueAtTime(0.5, t + dt + 0.01);
+        gg.gain.exponentialRampToValueAtTime(0.0001, t + dt + 0.35);
+        o.start(t + dt); o.stop(t + dt + 0.4);
       }
-      g.gain.value = vol * 0.35;
+      for (let k = 0; k < 2; k++) {
+        const t0 = t + 0.45 + k * 0.5;
+        const o = ac.createOscillator(), am = ac.createOscillator(), amG = ac.createGain(), gg = ac.createGain();
+        const n = ac.createBufferSource(), bp = ac.createBiquadFilter();
+        o.type = 'sawtooth'; o.frequency.value = 210;
+        am.type = 'square'; am.frequency.value = 32;
+        amG.gain.value = 0.5;
+        n.buffer = noiseBuf; bp.type = 'bandpass'; bp.frequency.value = 900; bp.Q.value = 0.8;
+        am.connect(amG); amG.connect(gg.gain);
+        o.connect(bp); n.connect(bp); bp.connect(gg); gg.connect(g);
+        gg.gain.setValueAtTime(0.0001, t0); gg.gain.exponentialRampToValueAtTime(0.6, t0 + 0.02);
+        gg.gain.setValueAtTime(0.6, t0 + 0.32); gg.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.38);
+        for (const src of [o, am, n]) { src.start(t0); src.stop(t0 + 0.4); }
+      }
+      g.gain.value = vol * 0.8;
       return;
     }
     if (kind === 'squeak') {
@@ -951,11 +964,14 @@ window.HOUSE_ASSETS = {
     const b = new THREE.Box3().setFromObject(obj);
     return addSolid(b.min.x - pad, b.max.x + pad, b.min.z - pad, b.max.z + pad, b.max.y, surf, furniture);
   }
+  const WALL_T = 0.206;
   function wall(x1, z1, x2, z2, tint) {
     const alongX = Math.abs(z2 - z1) < 1e-6;
     const len = alongX ? Math.abs(x2 - x1) : Math.abs(z2 - z1);
     const cx = (x1 + x2) / 2, cz = (z1 + z2) / 2;
-    box(cx, 1.5, cz, alongX ? len : 0.2, 3, alongX ? 0.2 : len, wallMat(tint, len), 'wall', false, true);
+    // Slightly thicker than the 0.2 grid spacing so a wall ending on another wall's face sits just inside it
+    // instead of sharing that plane (coplanar faces z-fight and flicker as the camera bobs).
+    box(cx, 1.5, cz, alongX ? len : WALL_T, 3, alongX ? WALL_T : len, wallMat(tint, len), 'wall', false, true);
     box(cx, 0.06, cz, alongX ? len : 0.26, 0.12, alongX ? 0.26 : len, MAT.trim, false, false, false);
     if (tint === 0xe3d9c4) {
       box(cx, 0.5, cz, alongX ? len : 0.216, 0.88, alongX ? 0.216 : len, wallMat(0x8a9a8c, len), false, false, false);
@@ -966,12 +982,12 @@ window.HOUSE_ASSETS = {
   function opening(axis, fixed, a, b, tint) {
     const mid = (a + b) / 2, w = b - a;
     if (axis === 'z') {
-      box(fixed, 2.55, mid, 0.2, 0.9, w, wallMat(tint, w), false, false, true);
+      box(fixed, 2.55, mid, WALL_T, 0.9, w, wallMat(tint, w), false, false, true);
       box(fixed, 2.14, mid, 0.28, 0.08, w + 0.16, MAT.trim, false, false, false);
       box(fixed, 1.05, a - 0.04, 0.28, 2.1, 0.08, MAT.trim, false, false, false);
       box(fixed, 1.05, b + 0.04, 0.28, 2.1, 0.08, MAT.trim, false, false, false);
     } else {
-      box(mid, 2.55, fixed, w, 0.9, 0.2, wallMat(tint, w), false, false, true);
+      box(mid, 2.55, fixed, w, 0.9, WALL_T, wallMat(tint, w), false, false, true);
       box(mid, 2.14, fixed, w + 0.16, 0.08, 0.28, MAT.trim, false, false, false);
       box(a - 0.04, 1.05, fixed, 0.08, 2.1, 0.28, MAT.trim, false, false, false);
       box(b + 0.04, 1.05, fixed, 0.08, 2.1, 0.28, MAT.trim, false, false, false);
@@ -992,10 +1008,17 @@ window.HOUSE_ASSETS = {
     solidFrom(panel, 'door');
   }
   // Wallpaper skin on one face of a shared hall wall, so the room side doesn't show the hall paint
+  // Its polygon offset makes it win the depth test over the hall wainscot just behind it.
+  const liningMats = {};
   function lining(axis, fixed, a, b) {
     const len = b - a, mid = (a + b) / 2;
-    if (axis === 'z') box(fixed, 1.5, mid, 0.01, 3, len, wallMat('paper', len), false, false, false);
-    else box(mid, 1.5, fixed, len, 3, 0.01, wallMat('paper', len), false, false, false);
+    const key = Math.round(len);
+    if (!liningMats[key]) {
+      liningMats[key] = heightAO(wallMat('paper', len).clone());
+      Object.assign(liningMats[key], { polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -4 });
+    }
+    if (axis === 'z') box(fixed, 1.5, mid, 0.01, 3, len, liningMats[key], false, false, false);
+    else box(mid, 1.5, fixed, len, 3, 0.01, liningMats[key], false, false, false);
   }
   // Closed decorative door flat on a wall face. ry: which way it faces.
   function wallDoor(x, z, ry) {
@@ -2481,7 +2504,8 @@ window.HOUSE_ASSETS = {
     try {
       const pr = renderer.getPixelRatio(), w = Math.max(1, canvas.clientWidth * pr), h = Math.max(1, canvas.clientHeight * pr);
       const rt = new THREE.WebGLRenderTarget(w, h, { type: THREE.HalfFloatType });
-      rt.samples = 0;
+      // MSAA here: without it, wall and trim edges shimmer while the camera bobs
+      rt.samples = renderer.capabilities.isWebGL2 ? 4 : 0;
       composer = new THREE.EffectComposer(renderer, rt);
       basePass = new THREE.RenderPass(scene, camera);
       basePass.enabled = false;
