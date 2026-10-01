@@ -1144,17 +1144,40 @@ window.HOUSE_ASSETS = {
     if (placeModel('chair', -4.6, 0, 7.15, Math.PI, 1))
       solids.push({ minX: -5.0, maxX: -4.2, minZ: 6.85, maxZ: 7.45, top: 0.7, furniture: true });
     // the roommate: head on the pillow, body under the duvet
-    roommateGroup = new THREE.Group();
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.11, 16, 12), MAT.skin);
-    head.position.set(-0.28, 0.06, 0);
-    const hair = new THREE.Mesh(new THREE.SphereGeometry(0.115, 16, 12, 0, Math.PI * 2, 0, Math.PI / 2), MAT.hair);
-    hair.position.copy(head.position); hair.rotation.z = Math.PI / 2;
-    const bump = new THREE.Mesh(new THREE.SphereGeometry(0.4, 16, 10), MAT.duvetBlue);
-    bump.scale.set(1.9, 0.35, 0.75); bump.position.set(0.55, -0.02, 0);
-    roommateGroup.add(head, hair, bump);
-    roommateGroup.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+    // the roommate: Jouw eigen GLTF model inladen
+    // the roommate: Jouw eigen GLTF model inladen
+    roommateGroup = new THREE.Group(); 
+    
+    // FIX VOOR DE CRASH: We voegen een leeg object toe als eerste kind (children[0]).
+    // Zo crasht de animatie in de game loop niet terwijl het echte model nog aan het inladen is.
+    const dummyNode = new THREE.Object3D();
+    roommateGroup.add(dummyNode);
+
     roommateGroup.position.set(-7.4, 0.68, 11.8);
     scene.add(roommateGroup);
+
+    const loader = new THREE.GLTFLoader();
+    loader.load(
+        'person/scene.gltf', // Jouw pad klopt helemaal!
+        function ( gltf ) {
+            const loadedModel = gltf.scene;
+            
+            // Zet schaduwen aan voor je model
+            loadedModel.traverse(function (node) {
+                if (node.isMesh) {
+                    node.castShadow = true;
+                    node.receiveShadow = true;
+                }
+            });
+
+            // Voeg het geladen model toe aan de roommateGroup
+            roommateGroup.add(loadedModel);
+        },
+        undefined,
+        function ( error ) {
+            console.error( 'Fout bij het laden van het model:', error );
+        }
+    );
 
     // Your bedroom
     windowOn(5.2, 1.6, 19.99, Math.PI, 1.1, 1.2, null);
