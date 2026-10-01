@@ -1,0 +1,11 @@
+Model Information:
+* title:	Triple T
+* source:	https://sketchfab.com/3d-models/triple-t-82e4c7a70be148b0a2fec44089edf270
+* author:	grokeater (https://sketchfab.com/grokeater)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Triple T" (https://sketchfab.com/3d-models/triple-t-82e4c7a70be148b0a2fec44089edf270) by grokeater (https://sketchfab.com/grokeater) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

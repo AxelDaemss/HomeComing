@@ -53,11 +53,22 @@
   .card p { font-size: 1.3rem; line-height: 1.4; margin: 0.4rem 0; }
   .card .keys { color: var(--dim); font-size: 1.1rem; }
   kbd { font-family: inherit; border: 1px solid var(--dim); border-radius: 0.25rem; padding: 0 0.3rem; }
-  #go {
-    margin-top: 1.2rem; font: inherit; font-size: 1.4rem; color: var(--night);
-    background: var(--lamp); border: 0; border-radius: 0.5rem; padding: 0.5rem 1.4rem; cursor: pointer;
+  .diff-prompt { color: var(--dim); font-size: 1.1rem !important; margin-top: 1rem !important; }
+  .difficulty { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.6rem; margin-top: 0.5rem; }
+  .difficulty button {
+    font: inherit; color: var(--ink); background: rgba(255, 255, 255, 0.06); cursor: pointer;
+    border: 2px solid var(--dim); border-radius: 0.5rem; padding: 0.5rem 0.4rem;
+    display: grid; gap: 0.2rem; align-content: start;
   }
-  #go:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+  .difficulty strong { font-size: 1.4rem; font-weight: 400; }
+  .difficulty small { font-size: 0.9rem; color: var(--dim); line-height: 1.25; }
+  .difficulty button:hover, .difficulty button:focus-visible { border-color: var(--lamp); outline: none; }
+  .difficulty button[data-diff="medium"] { border-color: var(--noise); }
+  .difficulty button[data-diff="hard"] { border-color: var(--wake); }
+  .difficulty button[data-current="true"] { background: var(--lamp); border-color: var(--lamp); }
+  .difficulty button[data-current="true"] strong, .difficulty button[data-current="true"] small { color: var(--night); }
+  .difficulty button:disabled { opacity: 0.45; cursor: wait; }
+  @media (max-width: 520px) { .difficulty { grid-template-columns: 1fr; } }
 
   /* Keep action cues near the sightline and the balance gauge above the floor edge. */
   .hud { max-width: 18rem; gap: 0.3rem; }
@@ -160,6 +171,7 @@
     <div class="meter"><span>Breath</span><div class="track"><i id="breathBar" style="background:#8fd3ff;width:100%"></i></div></div>
     <div class="goal" id="attrs" style="color:#cfd6e6;white-space:pre-line"></div>
     <div class="goal" id="timer">Roommate's alarm in 90 s</div>
+    <div class="goal" id="diffHud" style="color:var(--dim)"></div>
   </div>
 
   <div id="guidance" hidden>
@@ -190,7 +202,7 @@
 
   <div id="overlay">
     <div class="card">
-      <p class="level">Level 1</p>
+      <p class="level" id="levelLabel">Level 1</p>
       <h1 id="title">De Stille Thuiskomst</h1>
       <p id="msg">It's 4 a.m. Sneak to your bedroom without waking your roommate.</p>
       <p class="intro-balance"><kbd data-key="left">A</kbd> steps and leans left. <kbd data-key="right">D</kbd> steps and leans right.<br>Keep the balance marker near the middle with short opposite taps. Lean too far and you drift into noisy objects — or stumble.</p>
@@ -201,7 +213,12 @@
         <span>Hold <kbd>E</kbd> remove shoes on the mat</span><span>Central prompts show what to do next</span>
       </div>
       <p class="keys">Follow the winding hallway past your roommate's room to your bedroom — the lit door at the very end — before the alarm in 90 seconds. Everything you bump into makes noise. Freeze when your roommate turns over. Headphones recommended.</p>
-      <button id="go">Start sneaking</button>
+      <p class="diff-prompt" id="diffPrompt">How deeply does your roommate sleep tonight?</p>
+      <div class="difficulty" id="difficulty">
+        <button data-diff="easy"><strong>Easy</strong><small>Heavy sleeper · tidy hallway · barely tipsy</small></button>
+        <button data-diff="medium"><strong>Medium</strong><small>Light sleeper · some clutter · a phone buzz wakes him</small></button>
+        <button data-diff="hard"><strong>Hard</strong><small>Wakes at anything · cluttered · very drunk</small></button>
+      </div>
     </div>
   </div>
 </div>
@@ -255,13 +272,17 @@ window.HOUSE_ASSETS = {
 };
 </script>
 <script src="sounds/sounds_pack.js"></script>
+<script src="triple_t/triple_t_pack.js"></script>
 <script>
 (() => {
   const canvas = document.getElementById('c');
   const overlay = document.getElementById('overlay');
   const titleEl = document.getElementById('title');
   const msgEl = document.getElementById('msg');
-  const goBtn = document.getElementById('go');
+  const diffBtns = [...document.querySelectorAll('#difficulty button')];
+  const diffPrompt = document.getElementById('diffPrompt');
+  const levelLabel = document.getElementById('levelLabel');
+  const diffHud = document.getElementById('diffHud');
   const noiseBar = document.getElementById('noiseBar');
   const wakeBar = document.getElementById('wakeBar');
   const timerEl = document.getElementById('timer');
@@ -322,8 +343,29 @@ window.HOUSE_ASSETS = {
     drunkDrift: 0.2, tipping: 0.6, correction: 2.8, balanceDamping: 3.2, sidewaysDrift: 0.95,
     balanceSafe: 0.30, balanceWarning: 0.35, balanceDanger: 0.72,
     stepNoise: 0.8, creakNoise: 18, rugDamping: 0.55, stumbleNoise: 30,
-    hearingRange: 18, noiseDecay: 15, wakeDecay: 6.0, timeLimit: 90, lightSleepMult: 2.5, doorNoise: 16
+    hearingRange: 24, noiseDecay: 15, wakeDecay: 3.5, timeLimit: 90, lightSleepMult: 3, doorNoise: 16,
+    wakeSensitivity: 1.5, nearRange: 5.5, nearWake: 32
   };
+  // Difficulty: Medium is the base tuning above; the others scale it.
+  // props = loose objects in the house (vase on the table + cat + random floor clutter)
+  const DIFFICULTY = {
+    easy:   { label: 'Easy',   wake: 0.6, near: 0.6, decay: 1.4, drunk: 0.7,  sway: 0.25, props: 4,  phoneCatch: false, phoneT: [30, 45] },
+    medium: { label: 'Medium', wake: 1.0, near: 1.0, decay: 1.0, drunk: 1.0,  sway: 0.35, props: 7,  phoneCatch: true,  phoneT: [30, 45] },
+    hard:   { label: 'Hard',   wake: 1.6, near: 1.5, decay: 0.7, drunk: 1.35, sway: 0.45, props: 11, phoneCatch: true,  phoneT: [15, 25] }
+  };
+  const T_BASE = { ...T };
+  let difficulty = 'medium';
+  function applyDifficulty(id) {
+    difficulty = id;
+    const d = DIFFICULTY[id];
+    T.wakeSensitivity = T_BASE.wakeSensitivity * d.wake;
+    T.nearWake = T_BASE.nearWake * d.near;
+    T.wakeDecay = T_BASE.wakeDecay * d.decay;
+    T.drunkDrift = T_BASE.drunkDrift * d.drunk;
+    T.tipping = T_BASE.tipping * d.drunk;
+    T.sidewaysDrift = T_BASE.sidewaysDrift * d.drunk;
+    LEVEL.sway = d.sway;
+  }
   const ROOMMATE = { x: -0.2, z: 12.0 };
 
   // ---------- Renderer ----------
@@ -820,6 +862,7 @@ window.HOUSE_ASSETS = {
   }
   async function loadModels() {
     const loader = new THREE.GLTFLoader();
+    // tripleT comes from triple_t/triple_t_pack.js (a <script>, so it also works from file://)
     for (const [key, data] of [...Object.entries(A.models), ['siberian', './siberian.glb']]) {
       try {
         // embedded models are raw base64 .glb data; only file names are fetched
@@ -877,7 +920,7 @@ window.HOUSE_ASSETS = {
   }
 
   // ---------- Level building ----------
-  let solids, props, creaky, rugs, roommateGroup, creep, player, state, smokeLed;
+  let solids, props, creaky, rugs, roommateGroup, creep, player, state, smokeLed, sleeper;
   function flash(text) { player.flashText = text; player.flashT = 2.5; }
 
   function mesh(geo, mat, x, y, z, ry = 0, cast = true) {
@@ -1123,11 +1166,56 @@ window.HOUSE_ASSETS = {
     obj.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
     const pr = { kind, mesh: obj, x, y, z, vx: 0, vy: 0, vz: 0, cool: 1, fallen: false };
     propDims(pr);
+    obj.position.set(x, y + pr.lift, z);
     scene.add(obj);
     props.push(pr);
     return pr;
   }
   const propBox = pr => ({ minX: pr.x - pr.hx, maxX: pr.x + pr.hx, minZ: pr.z - pr.hz, maxZ: pr.z + pr.hz });
+
+  // Random floor clutter along the route; count depends on the difficulty.
+  // Hallway floor areas (minX, maxX, minZ, maxZ): A after the doormat, B, C, D up to your door.
+  const CLUTTER_AREAS = [[-0.8, 0.8, 2.2, 5.9], [-0.8, 6.8, 6.2, 7.8], [5.2, 6.8, 8.2, 15.8], [5.2, 12.3, 16.2, 17.8]];
+  const CLUTTER = {
+    toycar: () => modelProp('toycar', 4.0, Math.random() * Math.PI * 2),
+    duck:   () => modelProp('duck', 0.18, Math.random() * Math.PI * 2),
+    bottle: () => {
+      const b = modelProp('bottle', 1.6, 0);
+      if (b) b.g.rotation.set(0, Math.random() * Math.PI * 2, Math.PI / 2);
+      return b;
+    },
+    basket: () => ({ g: makeBasket() })
+  };
+  function scatterClutter(count) {
+    const area = a => (a[1] - a[0]) * (a[3] - a[2]);
+    const total = CLUTTER_AREAS.reduce((s, a) => s + area(a), 0);
+    const randomSpot = () => {
+      let r = Math.random() * total;
+      const a = CLUTTER_AREAS.find(a => (r -= area(a)) <= 0) || CLUTTER_AREAS[0];
+      return [a[0] + Math.random() * (a[1] - a[0]), a[2] + Math.random() * (a[3] - a[2])];
+    };
+    let bag = [];
+    for (let placed = 0, tries = 0; placed < count && tries < count * 6; tries++) {
+      if (!bag.length) bag = Object.keys(CLUTTER).sort(() => Math.random() - 0.5);
+      const kind = bag.pop();
+      const made = CLUTTER[kind]();
+      if (!made) continue;
+      const probe = { kind, mesh: made.g };
+      propDims(probe);
+      for (let attempt = 0; attempt < 60; attempt++) {
+        const [x, z] = randomSpot();
+        const pad = 0.12;
+        const box = { minX: x - probe.hx - pad, maxX: x + probe.hx + pad, minZ: z - probe.hz - pad, maxZ: z + probe.hz + pad };
+        if (solids.some(s => box.minX < s.maxX && box.maxX > s.minX && box.minZ < s.maxZ && box.maxZ > s.minZ)) continue;
+        // keep a walkable gap between objects
+        if (props.some(q => Math.hypot(q.x - x, q.z - z) < 1.2 + q.r + probe.r)) continue;
+        const pr = prop(kind, made.g, x, 0, z);
+        if (kind === 'bottle') pr.fallen = true;
+        placed++;
+        break;
+      }
+    }
+  }
   function makeVase() {
     if (MODELS.vase) {
       const g = new THREE.Group();
@@ -1510,19 +1598,10 @@ window.HOUSE_ASSETS = {
     prop('vase', makeVase(), -0.8, 0.8, 3.3);
     placeCentered('sunglasses', 1.0, -0.76, 0.8, 3.65, 0.4);
     placeCentered('candle', 1.0, -0.84, 0.8, 3.0);
-    const toy = modelProp('toycar', 4.0, 0.7);
-    if (toy) prop('toycar', toy.g, 2.4, 0, 7.2);
-    const duck = modelProp('duck', 0.18, -0.8);
-    if (duck) prop('duck', duck.g, 4.6, 0, 6.75);
-    const bottle = modelProp('bottle', 1.6, 0);
-    if (bottle) {
-      bottle.g.rotation.z = Math.PI / 2;
-      prop('bottle', bottle.g, 6.4, 0, 9.2).fallen = true;
-    }
-    prop('basket', makeBasket(), 8.9, 0, 16.4);
     const cat = makeCat();
     cat.rotation.y = 0.6;
     prop('cat', cat, 6.3, 0, 10.2);
+    scatterClutter(DIFFICULTY[difficulty].props - props.length);
 
     // --- Roommate's room ---
     windowOn(-0.99, 1.6, 9.6, Math.PI / 2, 1.0, 1.2, [-0.5, 2.6, 9.6, 1.5, 11.5]);
@@ -1557,6 +1636,21 @@ window.HOUSE_ASSETS = {
     // --- Your bedroom ---
     windowOn(16.0, 1.6, 13.01, 0, 1.1, 1.2, null);
     bed(17.0, 15.0, 2.1, 1.6, MAT.duvetGreen, false);
+    // you, flopped on top of the duvet: shown once you make it to bed
+    sleeper = null;
+    if (MODELS.tripleT) {
+      const body = MODELS.tripleT.clone(true);
+      body.scale.setScalar(0.9);
+      body.rotation.x = -Math.PI / 2;   // on its back, face up, head towards -z
+      sleeper = new THREE.Group();
+      sleeper.add(body);
+      sleeper.rotation.y = -Math.PI / 2;   // head towards the headboard (+x)
+      sleeper.updateMatrixWorld(true);
+      const b = new THREE.Box3().setFromObject(sleeper), c = b.getCenter(new THREE.Vector3());
+      sleeper.position.set(17.1 - c.x, 0.5 - b.min.y, 15.0 - c.z);
+      sleeper.visible = false;
+      scene.add(sleeper);
+    }
     const lamp = placeModel('lamp', 18.55, 0, 19.5, Math.PI / 2, 1);
     nightstand(18.65, 16.15, !lamp);
     if (lamp) {
@@ -1591,10 +1685,10 @@ window.HOUSE_ASSETS = {
     player = { x: 0, z: 1.4, yaw: Math.PI, pitch: 0, balance: 0, bv: 0, step: 0, bob: 0,
                stumble: 0, sdx: 0, sdz: 0, shake: 0, tableCool: 0, speed: 0,
                shoes: true, shoeT: 0, breath: 100, gasped: false, hicT: 18 + Math.random() * 14, hicWarned: false,
-               phoneMuted: false, phoneT: 30 + Math.random() * 15, muteT: 0, torch: false, battery: 100, stun: 0, keysT: 0,
+               phoneMuted: false, phoneT: DIFFICULTY[difficulty].phoneT[0] + Math.random() * (DIFFICULTY[difficulty].phoneT[1] - DIFFICULTY[difficulty].phoneT[0]), muteT: 0, torch: false, battery: 100, stun: 0, keysT: 0,
                flashText: '', flashT: 0 };
 
-    state = { balanceTime: 0, noise: 0, wake: 0, over: false, caught: null, snoreT: 1, time: T.timeLimit, catT: 4, catTarget: null, lightT: 20 + Math.random() * 12, light: 0, doorCool: 0, tickT: 0, alarmT: 0, haze: 0, hazeOn: false, hazeT: 20 + Math.random() * 10, hazeFull: 0 };
+    state = { balanceTime: 0, noise: 0, wake: 0, over: false, caught: null, snoreT: 1, time: T.timeLimit, catT: 4, catTarget: null, lightT: 20 + Math.random() * 12, light: 0, doorCool: 0, tickT: 0, alarmT: 0, haze: 0, hazeOn: false, hazeT: 5 + Math.random() * 4, hazeFull: 0, winning: null };
     camera.fov = 68;
     camera.updateProjectionMatrix();
     scareEl.style.opacity = 0;
@@ -1656,12 +1750,14 @@ window.HOUSE_ASSETS = {
   }
 
   function makeNoise(amount, x, z) {
-    if (state.over || state.caught) return;
+    if (state.over || state.caught || state.winning) return;
     const dist = Math.hypot(x - ROOMMATE.x, z - ROOMMATE.z);
-    const closeness = 0.15 + 0.85 * clamp(1 - dist / T.hearingRange, 0, 1);
+    const closeness = 0.2 + 0.8 * clamp(1 - dist / T.hearingRange, 0, 1);
+    // right next to him every sound counts up to three times as much
+    const near = 1 + 2 * clamp(1 - dist / T.nearRange, 0, 1);
     const sleepMult = state.light > 0 ? T.lightSleepMult : 1;
     state.noise = Math.min(100, state.noise + amount);
-    state.wake = Math.min(100, state.wake + amount * closeness * sleepMult);
+    state.wake = Math.min(100, state.wake + amount * closeness * near * sleepMult * T.wakeSensitivity);
     if (state.wake >= 100) startCatch(false);
   }
 
@@ -1671,17 +1767,47 @@ window.HOUSE_ASSETS = {
     ui.guidance.hidden = true;
     ui.balanceHud.hidden = true;
     clearKeys();
-    titleEl.textContent = won ? 'Made it. Zzz...' : alarm ? 'The alarm went off' : 'Your roommate woke up';
+    titleEl.textContent = won ? 'Made it. Zzz...' : alarm ? 'The alarm went off' : state.phoneCaught ? 'Your phone gave you away' : 'Your roommate woke up';
     msgEl.textContent = won
       ? 'You kept your balance and slipped into your bedroom without anyone noticing.'
       : alarm
         ? 'Your roommate is up and you are still standing in the hallway. Busted.'
-        : 'Busted. Expect a long talk at breakfast.';
-    goBtn.textContent = 'Try again';
+        : state.phoneCaught
+          ? 'One buzz was all it took. Silence your phone (M) next time.'
+          : 'Busted. Expect a long talk at breakfast.';
+    showDifficultyPicker(true);
     overlay.hidden = false;
     if (document.exitPointerLock) document.exitPointerLock();
     if (ac) { loopGain('heartbeat_slow', 0); loopGain('heartbeat_fast', 0); loopGain('room_tone', won ? 0.12 : 0.05); }
-    if (won) { sfx('door_close', 0.6, 13.1, 17); setTimeout(() => sfx('win_bedflop', 0.9), 650); }
+    if (won && !sleeper) { sfx('door_close', 0.6, 13.1, 17); setTimeout(() => sfx('win_bedflop', 0.9), 650); }
+  }
+
+  function startWin() {
+    if (!sleeper) { end(true); return; }
+    clearKeys();
+    ui.guidance.hidden = true;
+    ui.balanceHud.hidden = true;
+    statusEl.textContent = '';
+    state.hazeOn = false;
+    const look = new THREE.Camera();   // a camera looks down -z; a plain Object3D would face away from the bed
+    look.position.set(15.0, 1.9, 17.4);
+    look.lookAt(17.3, 0.55, 15.0);
+    state.winning = { t: 0, from: camera.position.clone(), fromQ: camera.quaternion.clone(), to: look.position.clone(), toQ: look.quaternion.clone() };
+    sfx('door_close', 0.6, 13.1, 17);
+    setTimeout(() => { sfx('win_bedflop', 0.9); if (sleeper) sleeper.visible = true; }, 650);
+    if (ac) { loopGain('heartbeat_slow', 0); loopGain('heartbeat_fast', 0); }
+  }
+  function updateWin(dt) {
+    const w = state.winning;
+    w.t += dt;
+    state.haze = Math.max(0, state.haze - 1.6 * dt);
+    const k = clamp(w.t / 1.6, 0, 1), e = k * k * (3 - 2 * k);
+    camera.position.lerpVectors(w.from, w.to, e);
+    camera.quaternion.slerpQuaternions(w.fromQ, w.toQ, e);
+    camera.updateMatrixWorld();
+    applyHazeFallback();
+    updateListener();
+    if (w.t > 4) end(true);
   }
 
   // ---------- Caught: he wakes up, sprints at you, and gets right in your face ----------
@@ -1838,7 +1964,7 @@ window.HOUSE_ASSETS = {
     if (started && !state.over && !state.caught && player) {
       if (e.code === 'Space' && !e.repeat && state.hazeOn) {
         state.hazeOn = false;
-        state.hazeT = 20 + Math.random() * 15;
+        state.hazeT = 6 + Math.random() * 6;
         player.shake = Math.max(player.shake, 0.5);
         sfx('head_shake', 0.5);
         flash('You shake your head. Better.');
@@ -1884,16 +2010,20 @@ window.HOUSE_ASSETS = {
     lockPointer();
   }
 
-  goBtn.addEventListener('click', () => {
+  // Difficulty buttons start (or restart) the game at that level; R retries the same level
+  function showDifficultyPicker(after) {
+    const label = DIFFICULTY[difficulty].label;
+    levelLabel.textContent = after ? 'Level 1 · ' + label : 'Level 1';
+    diffPrompt.textContent = after ? 'Try again — pick a level (R retries ' + label + ').' : 'How deeply does your roommate sleep tonight?';
+    for (const b of diffBtns) b.dataset.current = String(after && b.dataset.diff === difficulty);
+  }
+  for (const b of diffBtns) b.addEventListener('click', () => {
     initAudio();
     if (ac && ac.state === 'suspended') ac.resume();
     setupSamples();
-    if (state.over) { restart(); return; }
-    started = true;
-    clearKeys();
-    updateGuidance();
-    overlay.hidden = true;
-    lockPointer();
+    applyDifficulty(b.dataset.diff);
+    diffHud.textContent = 'Difficulty: ' + DIFFICULTY[difficulty].label;
+    restart();
   });
 
   // A/D creates lean momentum; an existing lean keeps pulling in that direction.
@@ -1983,6 +2113,7 @@ window.HOUSE_ASSETS = {
     if (state.caught && !state.over) { updateCatch(dt, t); return; }
     const over = state.over;
     if (over) { updateGuidance(); return; }
+    if (state.winning) { updateWin(dt); return; }
     state.balanceTime += dt;
 
     if (!over) {
@@ -2045,8 +2176,10 @@ window.HOUSE_ASSETS = {
         if (p.phoneT <= 0) {
           p.phoneT = 2.0;
           sfx('buzz', 1);
-          makeNoise(10, p.x, p.z);
           flash('Bzzz. "where did u go?? come back!!"');
+          // From Medium up, a single buzz is enough to wake him
+          if (DIFFICULTY[difficulty].phoneCatch) { state.phoneCaught = true; startCatch(false); return; }
+          makeNoise(10, p.x, p.z);
         }
       }
 
@@ -2058,7 +2191,7 @@ window.HOUSE_ASSETS = {
       state.hazeT -= dt;
       if (!state.hazeOn && state.hazeT <= 0) { if (p.hicWarned) { state.hazeT = 5; } else { state.hazeOn = true; state.hazeFull = 0; } }
       if (state.hazeOn) {
-        state.haze = Math.min(1, state.haze + 0.35 * dt);
+        state.haze = Math.min(1, state.haze + 0.45 * dt);
         state.hazeFull = state.haze >= 0.99 ? state.hazeFull + dt : 0;
         if (state.hazeFull > 4) {
           state.hazeFull = 0;
@@ -2146,8 +2279,10 @@ window.HOUSE_ASSETS = {
       const onRug = rugs.some(r => inside(r, p.x, p.z));
       let n = T.stepNoise * (sneak ? 0.3 : run ? 2.5 : 1) * (onRug ? T.rugDamping : 1) * (p.shoes ? 3.5 : 0.2);
       const grp = onRug ? 'step_rug' : run ? 'step_run' : p.shoes ? 'step_shoe_wood' : 'step_bare_wood';
-      const vol = (sneak ? 0.3 : run ? 0.95 : 0.55) * (onRug ? 0.7 : 1) * (p.shoes ? 1.5 : 1);
-      if (!play(grp, vol, null, run ? 1.08 : sneak ? 0.92 : 1)) sfx('step', n / 8);
+      const vol = (sneak ? 0.5 : run ? 1.3 : 1.0) * (onRug ? 0.75 : 1) * (p.shoes ? 1.4 : 1);
+      if (!play(grp, vol, null, (run ? 1.08 : sneak ? 0.92 : 1) * (p.shoes ? 0.88 : 1.05))) sfx('step', n / 8);
+      // every step shows on the noise meter, even when it is too soft to wake him
+      state.noise = Math.min(100, state.noise + (sneak ? 3 : run ? 12 : 6) * (onRug ? 0.6 : 1) * (p.shoes ? 1.6 : 1));
       if (creaky.some(b => inside(b, p.x, p.z))) {
         const c = T.creakNoise * (sneak ? 0.5 : 1);
         n += c;
@@ -2229,6 +2364,14 @@ window.HOUSE_ASSETS = {
     // Noise system & roommate
     state.noise = Math.max(0, state.noise - T.noiseDecay * dt);
     if (!over) state.wake = Math.max(0, state.wake - T.wakeDecay * dt);
+    // Standing close to him: he senses you even when you're silent (your breath reeks of beer)
+    if (!over) {
+      const near = clamp(1 - Math.hypot(p.x - ROOMMATE.x, p.z - ROOMMATE.z) / T.nearRange, 0, 1);
+      if (near > 0) {
+        state.wake = Math.min(100, state.wake + T.nearWake * near * (sneak ? 0.6 : 1) * (state.light > 0 ? 1.5 : 1) * dt);
+        if (state.wake >= 100) { startCatch(false); return; }
+      }
+    }
     roommateGroup.rotation.x = state.wake > 60 ? Math.sin(t * 12) * (state.wake - 60) * 0.004 : 0;
     roommateGroup.children[0].position.y = 0.08 + (state.wake > 80 ? Math.sin(t * 7) * 0.02 : 0);
     // your own heartbeat gets louder and faster as he stirs
@@ -2268,7 +2411,7 @@ window.HOUSE_ASSETS = {
       makeNoise(T.doorNoise, p.x, p.z);
     }
     if (state.caught) return;
-    if (!over && p.x > 13.5 && p.z > 13 && p.z < 20) end(true);
+    if (!over && p.x > 13.5 && p.z > 13 && p.z < 20) { startWin(); return; }
 
     // Camera: gentle tipsy sway
     p.shake = Math.max(0, p.shake - dt * 2);
@@ -2279,7 +2422,11 @@ window.HOUSE_ASSETS = {
     const sr = Math.sin(stutter * 0.45 + 0.5) * 0.05 * sw;
     const roll = -p.balance * 0.22 + sr + (Math.random() * 2 - 1) * p.shake * 0.14;
     const bob = Math.sin(p.bob / 0.7 * Math.PI) * 0.035 * Math.min(moving, 1.5);
-    camera.position.set(p.x + rx * p.balance * 0.25, 1.65 + bob, p.z + rz * p.balance * 0.25);
+    // Leaning moves your head sideways, but never closer than 0.12 m to a wall (no peeking through)
+    const camFree = (x, z) => !solids.some(s => s.top > 1.2 && x > s.minX - 0.12 && x < s.maxX + 0.12 && z > s.minZ - 0.12 && z < s.maxZ + 0.12);
+    let lean = p.balance * 0.25;
+    for (let k = 0; k < 10 && lean !== 0 && !camFree(p.x + rx * lean, p.z + rz * lean); k++) lean = k < 9 ? lean * 0.7 : 0;
+    camera.position.set(p.x + rx * lean, 1.65 + bob, p.z + rz * lean);
     camera.rotation.set(p.pitch + sp + (Math.random() * 2 - 1) * p.shake * 0.07, p.yaw + sy, roll);
 
     camera.updateMatrixWorld();
@@ -2300,9 +2447,8 @@ window.HOUSE_ASSETS = {
     wakeBar.style.width = state.wake + '%';
   }
 
-  goBtn.disabled = true;
-  const goLabel = goBtn.textContent;
-  goBtn.textContent = 'Loading the house...';
+  for (const b of diffBtns) b.disabled = true;
+  diffPrompt.textContent = 'Loading the house...';
   const HazeShader = {
     uniforms: { tDiffuse: { value: null }, haze: { value: 0 }, time: { value: 0 }, res: { value: new THREE.Vector2(1, 1) } },
     vertexShader: 'varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
@@ -2384,8 +2530,8 @@ window.HOUSE_ASSETS = {
   resizePost();
   loadModels().then(() => {
     build();
-    goBtn.disabled = false;
-    goBtn.textContent = goLabel;
+    for (const b of diffBtns) b.disabled = false;
+    showDifficultyPicker(false);
   });
   let last = performance.now();
   function frame(now) {
