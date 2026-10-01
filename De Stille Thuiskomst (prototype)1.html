@@ -58,6 +58,87 @@
     background: var(--lamp); border: 0; border-radius: 0.5rem; padding: 0.5rem 1.4rem; cursor: pointer;
   }
   #go:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+
+  /* Keep action cues near the sightline and the balance gauge above the floor edge. */
+  .hud { max-width: 18rem; gap: 0.3rem; }
+  .hud .meter { grid-template-columns: 5rem minmax(5rem, 11rem); font-size: 1rem; }
+  .hud .goal { font-size: 1rem; }
+  .hud .objective { max-width: 17rem; color: var(--dim); }
+  #attrs { color: var(--dim); font-size: 0.95rem; }
+  #guidance[hidden], #balanceHud[hidden], [hidden] { display: none !important; }
+  #guidance {
+    position: absolute; bottom: 8.5rem; left: 50%; transform: translateX(-50%);
+    width: min(29rem, calc(100% - 2rem)); text-align: center; pointer-events: none;
+    text-shadow: 0 2px 4px #000;
+  }
+  .action-card {
+    display: flex; align-items: center; gap: 1rem; padding: 0.85rem 1.1rem;
+    border: 1px solid rgba(255,184,103,0.45); border-radius: 0.8rem;
+    background: rgba(10,15,28,0.4); backdrop-filter: blur(5px); box-shadow: 0 5px 24px #0005; text-align: left;
+  }
+  .action-card[data-tone="danger"] { border-color: #ff8274; }
+  .action-card[data-tone="danger"] .action-key { color: #ffaaa0; border-color: #ff8274; }
+  .action-key {
+    flex-shrink: 0; display: grid; justify-items: center; gap: 0.15rem; min-width: 3.2rem;
+    padding: 0.25rem 0.6rem; border: 2px solid var(--lamp); border-radius: 0.4rem;
+    color: var(--lamp); background: #ffb86712; font-size: 1.6rem; line-height: 1.1;
+  }
+  .action-key small { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; }
+  .action-copy { flex: 1; min-width: 0; }
+  #actionTitle { display: block; font-size: 1.3rem; font-weight: 400; line-height: 1.15; }
+  #actionDetail { display: block; margin-top: 0.2rem; color: #bdc6da; font-size: 1rem; line-height: 1.2; }
+  .action-progress { height: 0.25rem; margin-top: 0.5rem; border-radius: 1rem; overflow: hidden; background: #ffffff20; }
+  #actionProgressBar { display: block; height: 100%; background: var(--lamp); }
+  #secondaryActions { display: grid; justify-items: center; gap: 0.25rem; margin-top: 0.4rem; }
+  .secondary-action { padding: 0.2rem 0.7rem; border-radius: 0.4rem; background: rgba(10,15,28,0.4); backdrop-filter: blur(5px); font-size: 1rem; }
+  .secondary-action kbd { color: var(--lamp); border-color: #ffb86780; margin-right: 0.4rem; }
+  #status { min-height: 1.4rem; margin-top: 0.45rem; color: var(--lamp); font-size: 1.1rem; }
+  #balanceHud {
+    position: absolute; bottom: max(1rem, env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%);
+    width: min(27rem, calc(100% - 2rem)); padding: 0.7rem 1rem 0.55rem; border-radius: 0.9rem;
+    background: rgba(10,15,28,0.94); border: 1px solid #a3abc64d; pointer-events: none; text-align: center;
+    --balance-color: #a4dbc1;
+  }
+  #balanceHud[data-level="warning"] { --balance-color: #ffca79; border-color: #ffca7999; }
+  #balanceHud[data-level="danger"] { --balance-color: #ff8274; border-color: #ff8274; }
+  .balance-heading { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.45rem; font-size: 1.05rem; }
+  #balanceState { color: var(--balance-color); }
+  .balance-row { display: flex; align-items: center; gap: 0.75rem; }
+  .balance-key { font-size: 1.25rem; min-width: 2rem; border: 1px solid #a3abc6; border-bottom-width: 3px; border-radius: 0.3rem; }
+  .balance-key[data-recommended="true"] { color: #ffca79; border-color: #ffca79; box-shadow: 0 0 12px #ffb86740; }
+  .balance-key[data-pressed="true"] { background: var(--lamp); color: #0d1120; border-color: var(--lamp); }
+  .balance-track {
+    position: relative; flex: 1; height: 0.85rem; border-radius: 1rem; border: 1px solid #ffffff35;
+    background: linear-gradient(90deg, #a63c3c, #bd8948 28%, #425265 39%, #425265 61%, #bd8948 72%, #a63c3c);
+  }
+  .balance-safe { position: absolute; top: -1px; bottom: -1px; left: 38%; width: 24%; border: 1px solid #a4dbc1; background: #a4dbc145; }
+  .balance-center { position: absolute; width: 2px; top: -0.35rem; bottom: -0.35rem; left: calc(50% - 1px); background: #d9efdf; }
+  #balanceMarker { position: absolute; top: 50%; left: 50%; width: 1rem; height: 1.35rem; border: 2px solid #fff2dc; border-radius: 0.4rem; background: var(--balance-color); box-shadow: 0 2px 6px #000; transform: translate(-50%, -50%); }
+  #balanceHint { margin: 0.45rem 0 0; color: var(--balance-color); font-size: 1rem; }
+  .control-strip { border-top: 1px solid #ffffff15; margin-top: 0.45rem; padding-top: 0.4rem; color: #a3abc6; font-size: 0.85rem; }
+  #overlay { z-index: 3; overflow-y: auto; }
+  .card { max-width: 37rem; }
+  .intro-balance { padding: 0.6rem 0.9rem; border: 1px solid #ffb86750; border-radius: 0.6rem; background: #ffb8670d; }
+  .key-guide { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem 1rem; margin: 1rem auto; text-align: left; font-size: 1.1rem; }
+  .key-guide kbd { color: var(--lamp); }
+  @media (max-width: 700px) {
+    .hud { max-width: 14rem; top: 0.6rem; left: 0.7rem; }
+    .hud .meter { grid-template-columns: 4.5rem 8rem; font-size: 0.9rem; }
+    .hud .objective, #attrs { display: none; }
+    #guidance { top: max(8rem, 24%); }
+    #actionTitle { font-size: 1.1rem; }
+    #actionDetail { font-size: 0.9rem; }
+    .action-card { padding: 0.65rem 0.8rem; gap: 0.7rem; }
+    .key-guide { grid-template-columns: 1fr; }
+  }
+  @media (max-height: 600px) {
+    #guidance { top: 1rem; width: min(26rem, 52%); left: 68%; }
+    #balanceHud { bottom: 0.5rem; padding-top: 0.45rem; }
+    .control-strip { display: none; }
+    .hud .objective, #attrs { display: none; }
+    .card h1 { font-size: 2.2rem; }
+    .card p { font-size: 1.1rem; }
+  }
 </style>
 </head>
 <body>
@@ -67,11 +148,36 @@
   <div class="hud" aria-hidden="true">
     <div class="meter"><span>Noise</span><div class="track"><i id="noiseBar"></i></div></div>
     <div class="meter"><span>Roommate</span><div class="track"><i id="wakeBar"></i></div></div>
-    <div class="goal">Get to your bedroom: the lit door at the end, on the right.</div>
+    <div class="goal objective">Bedroom: the lit door at the end, on the right.</div>
     <div class="meter"><span>Breath</span><div class="track"><i id="breathBar" style="background:#8fd3ff;width:100%"></i></div></div>
     <div class="goal" id="attrs" style="color:#cfd6e6;white-space:pre-line"></div>
-    <div class="goal" id="status" style="color:#f2a14b"></div>
     <div class="goal" id="timer">Roommate's alarm in 90 s</div>
+  </div>
+
+  <div id="guidance" hidden>
+    <div class="action-card" id="actionCard" role="status" aria-live="polite" aria-atomic="true">
+      <div class="action-key"><small id="actionVerb">Hold</small><span id="actionKey">E</span></div>
+      <div class="action-copy">
+        <strong id="actionTitle">Take off your shoes</strong>
+        <span id="actionDetail">Stay still on the doormat for quieter steps.</span>
+        <div class="action-progress" id="actionProgress" hidden><i id="actionProgressBar"></i></div>
+      </div>
+    </div>
+    <div id="secondaryActions"></div>
+    <div id="status" role="status" aria-live="polite"></div>
+  </div>
+
+  <div id="balanceHud" data-level="steady" hidden>
+    <div class="balance-heading"><span>LEFT / RIGHT BALANCE</span><span id="balanceState">Steady</span></div>
+    <div class="balance-row">
+      <kbd class="balance-key" id="balanceLeft">Q</kbd>
+      <div class="balance-track" id="balanceGauge" role="meter" aria-label="Left / right balance" aria-valuemin="-100" aria-valuemax="100" aria-valuenow="0" aria-valuetext="Centered">
+        <span class="balance-safe"></span><span class="balance-center"></span><i id="balanceMarker"></i>
+      </div>
+      <kbd class="balance-key" id="balanceRight">D</kbd>
+    </div>
+    <p id="balanceHint">Keep the marker in the middle · use short Q / D taps</p>
+    <div class="control-strip">Z / S walk · Q / D sidestep &amp; balance · C sneak · Mouse / arrows look</div>
   </div>
 
   <div id="overlay">
@@ -79,7 +185,14 @@
       <p class="level">Level 1</p>
       <h1 id="title">De Stille Thuiskomst</h1>
       <p id="msg">It's 4 a.m. Sneak to your bedroom without waking your roommate.</p>
-      <p class="keys"><kbd>WASD</kbd> walk, mouse or arrow keys to look, <kbd>Shift</kbd> run, <kbd>C</kbd> sneak, <kbd>Space</kbd> shake off the haze, hold <kbd>B</kbd> to hold your breath, <kbd>M</kbd> silence your phone, hold <kbd>E</kbd> on the doormat to take off your shoes.<br>It's dark. Your shoes are loud, your keys jingle when you run, you have the hiccups, and your friends keep texting. Sometimes the world goes hazy: press Space before you stumble. Mind the toys on the floor, and freeze when your roommate turns over. Alarm in 75 seconds. Headphones recommended.</p>
+      <p class="intro-balance"><kbd>Q</kbd> steps and leans left. <kbd>D</kbd> steps and leans right.<br>Keep the balance marker near the middle with short opposite taps. Lean too far and you drift into noisy objects — or stumble.</p>
+      <div class="key-guide">
+        <span><kbd>Z</kbd> / <kbd>S</kbd> walk forward / back</span><span>Mouse / <kbd>↑ ↓ ← →</kbd> look around</span>
+        <span>Hold <kbd>C</kbd> sneak · <kbd>Shift</kbd> run</span><span><kbd>Space</kbd> shake off the haze</span>
+        <span>Hold <kbd>B</kbd> suppress a hiccup</span><span><kbd>M</kbd> silence your phone</span>
+        <span>Hold <kbd>E</kbd> remove shoes on the mat</span><span>Central prompts show what to do next</span>
+      </div>
+      <p class="keys">Watch the toys on the floor. Freeze when your roommate turns over. Reach the lit bedroom door on the right before the alarm in 90 seconds. Headphones recommended.</p>
       <button id="go">Start sneaking</button>
     </div>
   </div>
@@ -179,22 +292,26 @@ window.HOUSE_ASSETS = {
   const statusEl = document.getElementById('status');
   const attrsEl = document.getElementById('attrs');
   const breathBar = document.getElementById('breathBar');
+  const ui = Object.fromEntries(['guidance', 'balanceHud', 'balanceGauge', 'balanceMarker', 'balanceState', 'balanceHint', 'balanceLeft', 'balanceRight', 'actionCard', 'actionVerb', 'actionKey', 'actionTitle', 'actionDetail', 'actionProgress', 'actionProgressBar', 'secondaryActions'].map(id => [id, document.getElementById(id)]));
+  let lastActionSignature = '';
+  let lastBalanceValue = null;
 
 
   // ---------- Level settings ----------
-  // Level 1: no balance mechanic, just a gentle tipsy sway. Set balance: true for later levels.
-  const LEVEL = { balance: false, sway: 0.35 };
+  // Lateral movement and balance share A / D, relative to the viewing direction.
+  const LEVEL = { balance: true, sway: 0.35 };
   const T = {
     walk: 2.2, run: 4.5, sneak: 1.1,
-    drunkDrift: 1.4, tipping: 1.6, correction: 4.5, sidewaysDrift: 1.6,
-    stepNoise: 3.5, creakNoise: 18, rugDamping: 0.55, stumbleNoise: 30,
-    hearingRange: 18, noiseDecay: 15, wakeDecay: 1.2, timeLimit: 75, lightSleepMult: 2.5, doorNoise: 16
+    drunkDrift: 0.2, tipping: 0.6, correction: 2.8, balanceDamping: 3.2, sidewaysDrift: 0.95,
+    balanceSafe: 0.30, balanceWarning: 0.35, balanceDanger: 0.72,
+    stepNoise: 0.8, creakNoise: 18, rugDamping: 0.55, stumbleNoise: 30,
+    hearingRange: 18, noiseDecay: 15, wakeDecay: 6.0, timeLimit: 90, lightSleepMult: 2.5, doorNoise: 16
   };
   const ROOMMATE = { x: -7, z: 11.8 };
 
   // ---------- Renderer ----------
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setPixelRatio(1);
   renderer.outputEncoding = THREE.sRGBEncoding;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.0;
@@ -415,8 +532,8 @@ window.HOUSE_ASSETS = {
     metal: std({ color: 0xdddddd, roughness: 0.35, metalness: 0.6 }),
     pot: std({ color: 0xb5643c, roughness: 0.8 }),
     leaf: std({ color: 0x2f6b34, roughness: 0.7 }),
-    vase: std({ color: 0x2f5f8a, roughness: 0.15, metalness: 0.1 }),
-    wicker: std({ map: woodTex, color: 0xc7a46b, roughness: 0.9 }),
+    vase: std({ color: 0x4488cc, roughness: 0.15, metalness: 0.1, emissive: 0x2244aa, emissiveIntensity: 0.12 }),
+    wicker: std({ map: woodTex, color: 0xe8c87a, roughness: 0.85, emissive: 0xaa8844, emissiveIntensity: 0.1 }),
     linen: fabricMat(0xeee9e0, 3),
     duvetBlue: fabricMat(0x5d7aa8, 3, true),
     duvetGreen: fabricMat(0x86a07e, 3, true),
@@ -426,7 +543,7 @@ window.HOUSE_ASSETS = {
     velvet: fabricMat(0x4d5a6e, 2),
     skin: std({ color: 0xe0b89a, roughness: 0.7 }),
     hair: std({ color: 0x3a2618, roughness: 0.9 }),
-    cat: std({ color: 0xd9822b, roughness: 0.95 }),
+    cat: std({ color: 0xff9933, roughness: 0.85, emissive: 0xff6600, emissiveIntensity: 0.15 }),
     catDark: std({ color: 0x9a5418, roughness: 0.95 }),
     screen: new THREE.MeshBasicMaterial({ color: 0x7fb4ff }),
     shade: std({ color: 0xfff0d0, emissive: 0xffb867, emissiveIntensity: 0.9, side: THREE.DoubleSide, roughness: 1 }),
@@ -834,7 +951,7 @@ window.HOUSE_ASSETS = {
       s.position.set(light[0], light[1], light[2]);
       s.target.position.set(light[3], 0, light[4]);
       s.castShadow = true;
-      s.shadow.mapSize.set(1024, 1024);
+      s.shadow.mapSize.set(512, 512);
       s.shadow.bias = -0.0015;
       scene.add(s, s.target);
     }
@@ -888,7 +1005,7 @@ window.HOUSE_ASSETS = {
     const l = new THREE.PointLight(0xffb36b, 2.2, 10, 2);
     l.position.set(x, 0.9, z);
     l.castShadow = true;
-    l.shadow.mapSize.set(512, 512);
+    l.shadow.mapSize.set(256, 256);
     l.shadow.bias = -0.003;
     scene.add(l);
   }
@@ -1105,14 +1222,14 @@ window.HOUSE_ASSETS = {
     for (const x of [0.45, 1.35]) plankAt(x, 16.7, 18.3);
 
     // Props
-    prop('vase', makeVase(), -1.78, 0.8, 3.3, 0.2, 0.33, 0.16, 2);
-    prop('basket', makeBasket(), 1.5, 0, 13.6, 0.52, 0.42, 0.52, 1.2);
+    prop('vase', makeVase(), -1.78, 0.8, 3.3, 0.28, 0.40, 0.22, 2);
+    prop('basket', makeBasket(), 1.5, 0, 13.6, 0.62, 0.52, 0.62, 1.2);
     // things lying around (real models): a toy car, a rubber duck, an empty bottle
-    const toy = modelProp('toycar', 2.6, 0.7);
+    const toy = modelProp('toycar', 4.0, 0.7);
     if (toy) prop('toycar', toy.g, 0.1, 0, 6.6, Math.max(toy.w, 0.2), toy.h, Math.max(toy.d, 0.2), 3);
-    const duck = modelProp('duck', 0.1, -0.8);
+    const duck = modelProp('duck', 0.18, -0.8);
     if (duck) prop('duck', duck.g, 1.25, 0, 7.6, Math.max(duck.w, 0.16), duck.h, Math.max(duck.d, 0.16), 2);
-    const bottle = modelProp('bottle', 1.0, 0);
+    const bottle = modelProp('bottle', 1.6, 0);
     if (bottle) {
       bottle.g.rotation.z = Math.PI / 2;
       prop('bottle', bottle.g, -0.35, 0, 12.7, 0.26, 0.11, 0.11, 1.5);
@@ -1165,7 +1282,7 @@ window.HOUSE_ASSETS = {
       const l = new THREE.PointLight(0xffb36b, 2.4, 11, 2);
       l.position.set(7.55, 1.55, 18.95);
       l.castShadow = true;
-      l.shadow.mapSize.set(1024, 1024);
+      l.shadow.mapSize.set(512, 512);
       l.shadow.bias = -0.003;
       scene.add(l);
       solids.push({ minX: 7.2, maxX: 7.9, minZ: 19.2, maxZ: 19.9, top: 1.8, furniture: false });
@@ -1188,11 +1305,11 @@ window.HOUSE_ASSETS = {
 
     player = { x: 0, z: 1.4, yaw: Math.PI, pitch: 0, balance: 0, bv: 0, step: 0, bob: 0,
                stumble: 0, sdx: 0, sdz: 0, shake: 0, tableCool: 0, speed: 0,
-               shoes: true, shoeT: 0, breath: 100, gasped: false, hicT: 7 + Math.random() * 5, hicWarned: false,
-               phoneMuted: false, phoneT: 10 + Math.random() * 6, muteT: 0, torch: false, battery: 100, stun: 0, keysT: 0,
+               shoes: true, shoeT: 0, breath: 100, gasped: false, hicT: 18 + Math.random() * 14, hicWarned: false,
+               phoneMuted: false, phoneT: 30 + Math.random() * 15, muteT: 0, torch: false, battery: 100, stun: 0, keysT: 0,
                flashText: '', flashT: 0 };
 
-    state = { noise: 0, wake: 0, over: false, snoreT: 1, time: T.timeLimit, catT: 4, catTarget: null, lightT: 12 + Math.random() * 6, light: 0, doorCool: 0, tickT: 0, alarmT: 0, haze: 0, hazeOn: false, hazeT: 8 + Math.random() * 6, hazeFull: 0 };
+    state = { balanceTime: 0, noise: 0, wake: 0, over: false, snoreT: 1, time: T.timeLimit, catT: 4, catTarget: null, lightT: 20 + Math.random() * 12, light: 0, doorCool: 0, tickT: 0, alarmT: 0, haze: 0, hazeOn: false, hazeT: 20 + Math.random() * 10, hazeFull: 0 };
   }
 
   // ---------- Helpers ----------
@@ -1229,10 +1346,14 @@ window.HOUSE_ASSETS = {
   }
 
   function end(won, alarm) {
+    if (state.over) return;
     state.over = true;
+    ui.guidance.hidden = true;
+    ui.balanceHud.hidden = true;
+    clearKeys();
     titleEl.textContent = won ? 'Made it. Zzz...' : alarm ? 'The alarm went off' : 'Your roommate woke up';
     msgEl.textContent = won
-      ? 'You slipped into your bedroom without anyone noticing. Level 2 adds the wobble.'
+      ? 'You kept your balance and slipped into your bedroom without anyone noticing.'
       : alarm
         ? 'Your roommate is up and you are still standing in the hallway. Busted.'
         : 'Busted. Expect a long talk at breakfast.';
@@ -1251,15 +1372,17 @@ window.HOUSE_ASSETS = {
     if (started && !state.over && player) {
       if (e.code === 'Space' && !e.repeat && state.hazeOn) {
         state.hazeOn = false;
-        state.hazeT = 11 + Math.random() * 9;
+        state.hazeT = 20 + Math.random() * 15;
         player.shake = Math.max(player.shake, 0.5);
         flash('You shake your head. Better.');
       }
-      if (e.code === 'KeyM' && !e.repeat && !player.phoneMuted && player.muteT <= 0) player.muteT = 1.2;
+      if ((e.key === 'm' || e.key === 'M') && !e.repeat && !player.phoneMuted && player.muteT <= 0) { player.muteT = 0.4; sfx('click', 0.4); flash('Silencing phone…'); }
     }
   });
   window.addEventListener('keyup', e => { keys[e.code] = false; });
-  window.addEventListener('blur', () => { for (const k in keys) keys[k] = false; });
+  function clearKeys() { for (const k in keys) keys[k] = false; dragging = false; }
+  window.addEventListener('blur', clearKeys);
+  document.addEventListener('visibilitychange', () => { if (document.hidden) clearKeys(); });
 
   function lockPointer() {
     try {
@@ -1281,7 +1404,10 @@ window.HOUSE_ASSETS = {
   });
 
   function restart() {
+    clearKeys();
     build();
+    started = true;
+    updateGuidance();
     titleEl.textContent = 'De Stille Thuiskomst';
     statusEl.textContent = '';
     overlay.hidden = true;
@@ -1294,14 +1420,99 @@ window.HOUSE_ASSETS = {
     setupSamples();
     if (state.over) { restart(); return; }
     started = true;
+    clearKeys();
+    updateGuidance();
     overlay.hidden = true;
     lockPointer();
   });
+
+  // A/D creates lean momentum; an existing lean keeps pulling in that direction.
+  // Exponential damping keeps short corrective taps useful at different frame rates.
+  function advanceBalance(p, input, effort, sneak, run, haze, dt, time) {
+    const sway = (Math.sin(time * 0.9) + Math.sin(time * 1.7 + 1.7) * 0.55) / 1.55;
+    const pace = sneak ? 0.65 : run ? 1.25 : 1;
+    const deadzone = Math.abs(p.balance) < 0.25 ? 0.25 : 1.0;
+    const disturbance = sway * T.drunkDrift * pace * (0.65 + Math.min(effort, 1.5)) * (1 + haze * 0.65) * deadzone;
+    const acceleration = input * T.correction * (sneak ? 0.85 : run ? 1.2 : 1) + disturbance + p.balance * T.tipping;
+    const damping = Math.exp(-T.balanceDamping * dt);
+    const terminalVelocity = acceleration / T.balanceDamping;
+    p.balance += terminalVelocity * dt + (p.bv - terminalVelocity) * (1 - damping) / T.balanceDamping;
+    p.bv = p.bv * damping + terminalVelocity * (1 - damping);
+    p.balance = clamp(p.balance, -1, 1);
+    // Drift exists while standing still too, and grows faster near either edge.
+    return p.balance * Math.abs(p.balance) * T.sidewaysDrift * (sneak ? 0.65 : 1) * (0.65 + Math.min(effort, 1.5) * 0.35);
+  }
+
+  function actionPrompts(p, s, input) {
+    const prompts = [];
+    const add = (id, priority, key, verb, title, detail, tone = 'normal', progress = null) => prompts.push({ id, priority, key, verb, title, detail, tone, progress });
+    const lean = Math.abs(p.balance);
+    if (lean > T.balanceWarning) {
+      const left = p.balance < 0;
+      const danger = lean >= T.balanceDanger;
+      add('balance', danger ? 100 : 65, left ? 'D' : 'A', 'Tap', danger ? 'About to stumble — ' + (left ? 'lean right!' : 'lean left!') : 'Drifting ' + (left ? 'left' : 'right'), 'Use short taps. Release as the marker reaches the middle.', danger ? 'danger' : 'normal');
+    }
+    if (input.KeyB && p.breath <= 25) add('breath', 98, 'B', 'Release', 'Let yourself breathe', 'Release B to refill your breath and avoid a loud gasp.', 'danger');
+    if (s.hazeOn) add('haze', s.haze > 0.85 ? 94 : 80, 'Space', 'Press', 'Shake off the haze', 'Clear your vision before you lose your footing.', s.haze > 0.85 ? 'danger' : 'normal');
+    if (p.hicWarned && !(input.KeyB && p.breath <= 25)) add('hiccup', 90, 'B', input.KeyB && p.breath > 0 ? 'Keep holding' : 'Hold', 'A hiccup is coming', 'Hold until the hiccup passes, then release to breathe.');
+    if (s.light > 0) add('freeze', 85, 'STOP', 'Movement', 'Your roommate is turning over', 'Release movement keys. Only make tiny A/D corrections if needed.', 'danger');
+    if (p.shoes && Math.hypot(p.x, p.z - 0.7) < 1.4) add('shoes', 40, 'E', 'Hold', p.shoeT > 0 ? 'Taking off your shoes…' : 'Take off your shoes', 'Stay still and centered on the doormat for quieter steps.', 'normal', p.shoeT / 1.8);
+    if (!p.phoneMuted) add('phone', 30, 'M', p.muteT > 0 ? 'Wait' : 'Press', p.muteT > 0 ? 'Silencing your phone…' : 'Silence your phone', 'Keep your friends’ messages from waking your roommate.', 'normal', p.muteT > 0 ? 1 - p.muteT / 1.2 : null);
+    if (p.x > 0.6 && p.z > 15 && p.z < 19) add('door', 55, 'C', 'Hold', 'Sneak through the lit door', 'Move slowly so the bedroom door does not squeak.');
+    add('walk', 0, 'Z S', 'Walk', 'Reach the lit door on the right', 'Hold C to sneak. Q/D sidestep and shift your balance.');
+    return prompts.sort((a, b) => b.priority - a.priority);
+  }
+
+  function updateGuidance() {
+    const active = started && !state.over;
+    ui.guidance.hidden = !active;
+    ui.balanceHud.hidden = !active || !LEVEL.balance;
+    if (!active) return;
+    const p = player, lean = Math.abs(p.balance);
+    const side = p.balance < 0 ? 'left' : 'right';
+    const level = lean >= T.balanceDanger ? 'danger' : lean > T.balanceSafe ? 'warning' : 'steady';
+    ui.balanceHud.dataset.level = level;
+    ui.balanceMarker.style.left = (50 + p.balance * 50) + '%';
+    ui.balanceState.textContent = level === 'steady' ? 'Steady' : (level === 'danger' ? 'Tipping ' : 'Leaning ') + side;
+    ui.balanceHint.textContent = lean > T.balanceSafe ? (p.balance < 0 ? 'Tap D →' : '← Tap A') + ' to return to the middle' : 'Keep the marker in the middle · use short Q / D taps';
+    ui.balanceLeft.dataset.recommended = String(p.balance > T.balanceSafe);
+    ui.balanceRight.dataset.recommended = String(p.balance < -T.balanceSafe);
+    ui.balanceLeft.dataset.pressed = String(!!keys.KeyA);
+    ui.balanceRight.dataset.pressed = String(!!keys.KeyD);
+    const value = Math.round(p.balance * 20) * 5;
+    if (value !== lastBalanceValue) {
+      lastBalanceValue = value;
+      ui.balanceGauge.setAttribute('aria-valuenow', value);
+      ui.balanceGauge.setAttribute('aria-valuetext', value === 0 ? 'Centered' : Math.abs(value) + '% ' + side + '; tap ' + (p.balance < 0 ? 'D' : 'Q') + ' to center');
+    }
+    const prompts = actionPrompts(p, state, keys);
+    const main = prompts[0];
+    // Keep simultaneous hazards visible below the main cue instead of hiding them.
+    const secondary = prompts.slice(1).filter(a => a.priority >= 65).slice(0, 2);
+    const signature = JSON.stringify([main.id, main.verb, main.title, main.detail, main.tone, secondary.map(a => [a.id, a.key, a.verb, a.title])]);
+    if (signature !== lastActionSignature) {
+      lastActionSignature = signature;
+      ui.actionCard.dataset.tone = main.tone;
+      ui.actionKey.textContent = main.key;
+      ui.actionVerb.textContent = main.verb;
+      ui.actionTitle.textContent = main.title;
+      ui.actionDetail.textContent = main.detail;
+      ui.secondaryActions.replaceChildren(...secondary.map(a => {
+        const row = document.createElement('div'); row.className = 'secondary-action';
+        const key = document.createElement('kbd'); key.textContent = a.verb + ' ' + a.key;
+        row.append(key, document.createTextNode(a.title)); return row;
+      }));
+    }
+    ui.actionProgress.hidden = main.progress === null;
+    if (main.progress !== null) ui.actionProgressBar.style.width = clamp(main.progress * 100, 0, 100) + '%';
+  }
 
   // ---------- Game loop ----------
   function update(dt, t) {
     const p = player;
     const over = state.over;
+    if (over) { updateGuidance(); return; }
+    state.balanceTime += dt;
 
     if (!over) {
       if (keys.ArrowLeft) p.yaw += 1.8 * dt;
@@ -1323,15 +1534,11 @@ window.HOUSE_ASSETS = {
     mx *= speed; mz *= speed;
     // stepped on something: you freeze for a moment
     if (p.stun > 0) { p.stun -= dt; mx *= 0.1; mz *= 0.1; }
-    if (state.haze > 0.2) {
-      const dr = Math.sin(t * 1.3) * state.haze * 0.9 * (0.3 + Math.min(1, ml));
-      mx += rx * dr; mz += rz * dr;
-    }
-    const moving = Math.hypot(mx, mz) / T.walk;
+    let moving = Math.hypot(mx, mz) / T.walk;
 
     if (!over) {
       // Shoes: loud until you take them off on the doormat (hold E, standing still)
-      if (p.shoes && keys.KeyE && ml < 0.01 && Math.hypot(p.x - 0, p.z - 0.7) < 1.4) {
+      if (p.shoes && keys.KeyE && ml < 0.01 && Math.abs(p.balance) < T.balanceWarning && Math.hypot(p.x - 0, p.z - 0.7) < 1.4) {
         p.shoeT += dt;
         if (p.shoeT >= 1.8) { p.shoes = false; sfx('shoe', 0.5, p.x, p.z); makeNoise(3, p.x, p.z); flash('Shoes off. Much quieter.'); }
       } else p.shoeT = 0;
@@ -1349,10 +1556,13 @@ window.HOUSE_ASSETS = {
       p.hicT -= dt;
       if (p.hicT <= 1.6 && !p.hicWarned) p.hicWarned = true;
       if (p.hicT <= 0) {
-        if (holding) flash('Hiccup swallowed.');
-        else { sfx('hic', 1); makeNoise(14, p.x, p.z); flash('*HIC*'); p.shake = Math.max(p.shake, 0.35); }
-        p.hicT = 9 + Math.random() * 9;
-        p.hicWarned = false;
+        if (state.hazeOn) { p.hicT = 5; }
+        else {
+          if (holding) flash('Hiccup swallowed.');
+          else { sfx('hic', 1); makeNoise(14, p.x, p.z); flash('*HIC*'); p.shake = Math.max(p.shake, 0.35); }
+          p.hicT = 18 + Math.random() * 14;
+          p.hicWarned = false;
+        }
       }
 
       // Phone: buzzes with messages until you silence it
@@ -1362,7 +1572,7 @@ window.HOUSE_ASSETS = {
       } else if (!p.phoneMuted) {
         p.phoneT -= dt;
         if (p.phoneT <= 0) {
-          p.phoneT = 15 + Math.random() * 10;
+          p.phoneT = 2.0;
           sfx('buzz', 1);
           makeNoise(10, p.x, p.z);
           flash('Bzzz. "where did u go?? come back!!"');
@@ -1375,7 +1585,7 @@ window.HOUSE_ASSETS = {
 
       // Drunk haze: creeps in, SPACE shakes it off; ignore it too long and you stumble
       state.hazeT -= dt;
-      if (!state.hazeOn && state.hazeT <= 0) { state.hazeOn = true; state.hazeFull = 0; }
+      if (!state.hazeOn && state.hazeT <= 0) { if (p.hicWarned) { state.hazeT = 5; } else { state.hazeOn = true; state.hazeFull = 0; } }
       if (state.hazeOn) {
         state.haze = Math.min(1, state.haze + 0.35 * dt);
         state.hazeFull = state.haze >= 0.99 ? state.hazeFull + dt : 0;
@@ -1389,30 +1599,25 @@ window.HOUSE_ASSETS = {
       } else state.haze = Math.max(0, state.haze - 1.6 * dt);
     }
 
-    // Balance (off in level 1)
+    // The gauge, camera lean and physical drift all follow the same balance value.
     if (LEVEL.balance) {
-      const sway = (Math.sin(t * 0.53) + Math.sin(t * 1.31 + 1.7) * 0.6 + Math.sin(t * 0.27 + 4) * 0.8) / 2.4;
-      const lookDown = 1 + Math.max(0, -p.pitch) / 1.05;
-      const drift = T.drunkDrift * (sneak ? 0.5 : 1) * (0.4 + moving) * lookDown;
-      p.bv += sway * drift * dt + p.balance * T.tipping * dt;
-      if (!over) p.bv += ((keys.KeyE ? 1 : 0) - (keys.KeyQ ? 1 : 0)) * T.correction * dt;
-      p.bv *= 1 - Math.min(1, 1.2 * dt);
-      p.balance += p.bv * dt;
-      if (!over && p.stumble <= 0 && Math.abs(p.balance) >= 1) {
+      const drift = advanceBalance(p, ix, moving, sneak, run, state.haze, dt, state.balanceTime);
+      if (p.stumble <= 0 && Math.abs(p.balance) >= 1) {
         const side = Math.sign(p.balance);
-        p.stumble = 0.6; p.sdx = rx * side; p.sdz = rz * side;
-        p.balance = side * 0.35; p.bv = 0; p.shake = 1;
+        p.stumble = 0.35; p.sdx = rx * side; p.sdz = rz * side;
+        p.balance = side * 0.4; p.bv = 0; p.shake = 0.8;
         makeNoise(T.stumbleNoise, p.x, p.z);
         sfx('thud', 1);
+        flash('You lost your balance. Short ' + (side < 0 ? 'D' : 'Q') + ' taps to recover!');
       }
       if (p.stumble > 0) {
-        p.stumble -= dt;
-        mx = mx * 0.3 + p.sdx * 3.5; mz = mz * 0.3 + p.sdz * 3.5;
+        p.stumble = Math.max(0, p.stumble - dt);
+        mx = mx * 0.3 + p.sdx * 1.6; mz = mz * 0.3 + p.sdz * 1.6;
       } else {
-        const k = p.balance * T.sidewaysDrift * (0.3 + Math.min(moving, 1.5));
-        mx += rx * k; mz += rz * k;
+        mx += rx * drift; mz += rz * drift;
       }
     }
+    moving = Math.hypot(mx, mz) / T.walk;
 
     // Move & collide
     const ox = p.x, oz = p.z;
@@ -1420,7 +1625,7 @@ window.HOUSE_ASSETS = {
     p.tableCool -= dt;
     for (const s of solids) {
       if (s.top < 0.3) continue;
-      if (pushCircle(p, 0.35, s) && s.furniture && p.tableCool <= 0 && (p.stumble > 0 || moving > 1.6)) {
+      if (pushCircle(p, 0.2, s) && s.furniture && p.tableCool <= 0 && (p.stumble > 0 || moving > 1.6)) {
         p.tableCool = 0.8;
         makeNoise(8, p.x, p.z);
         sfx('thud', 0.8, p.x, p.z);
@@ -1439,7 +1644,7 @@ window.HOUSE_ASSETS = {
     for (const pr of props) {
       if (pr.y > 1.7) continue;
       const dx = pr.x - p.x, dz = pr.z - p.z;
-      const d = Math.hypot(dx, dz), min = pr.r + 0.35;
+      const d = Math.hypot(dx, dz), min = pr.r + 0.2;
       if (d < min && d > 1e-4) {
         const nx = dx / d, nz = dz / d;
         pr.x = p.x + nx * min; pr.z = p.z + nz * min;
@@ -1475,8 +1680,8 @@ window.HOUSE_ASSETS = {
     if (p.step >= 0.7) {
       p.step = 0;
       const onRug = rugs.some(r => inside(r, p.x, p.z));
-      let n = T.stepNoise * (sneak ? 0.3 : run ? 2.5 : 1) * (onRug ? T.rugDamping : 1) * (p.shoes ? 1.8 : 1);
-      if (!play(onRug ? 'step_rug' : 'step_wood', (sneak ? 0.25 : run ? 1.1 : 0.6) * (onRug ? 0.8 : 1) * (p.shoes ? 1.4 : 0.8), null, (run ? 1.08 : sneak ? 0.92 : 1) * (p.shoes ? 0.9 : 1.05))) sfx('step', n / 8);
+      let n = T.stepNoise * (sneak ? 0.3 : run ? 2.5 : 1) * (onRug ? T.rugDamping : 1) * (p.shoes ? 3.5 : 0.2);
+      if (!play(onRug ? 'step_rug' : 'step_wood', (sneak ? 0.25 : run ? 1.1 : 0.6) * (onRug ? 0.8 : 1) * (p.shoes ? 2.5 : 0.2), null, (run ? 1.08 : sneak ? 0.92 : 1) * (p.shoes ? 0.9 : 1.05))) sfx('step', n / 8);
       if (creaky.some(b => inside(b, p.x, p.z))) {
         const c = T.creakNoise * (sneak ? 0.5 : 1);
         n += c;
@@ -1561,7 +1766,7 @@ window.HOUSE_ASSETS = {
         if (state.light <= 0) statusEl.textContent = '';
       } else if (state.lightT <= 0) {
         state.light = 6;
-        state.lightT = 14 + Math.random() * 8;
+        state.lightT = 20 + Math.random() * 12;
         sfx('cloth', 1, ROOMMATE.x, ROOMMATE.z);
         statusEl.textContent = 'Your roommate is turning over. Freeze!';
       }
@@ -1588,32 +1793,23 @@ window.HOUSE_ASSETS = {
     // Camera: gentle tipsy sway
     p.shake = Math.max(0, p.shake - dt * 2);
     const sw = LEVEL.sway;
-    const sp = (Math.sin(t * 0.7) + Math.sin(t * 1.9 + 2) * 0.5) * 0.035 * sw;
-    const sy = (Math.sin(t * 0.55 + 1) + Math.sin(t * 1.3) * 0.5) * 0.045 * sw;
-    const sr = Math.sin(t * 0.45 + 0.5) * 0.05 * sw;
-    const roll = -p.balance * 0.44 + sr + (Math.random() * 2 - 1) * p.shake * 0.14;
+    const stutter = state.haze > 0.1 ? Math.floor(t * (25 - state.haze * 20)) / (25 - state.haze * 20) : t;
+    const sp = (Math.sin(stutter * 0.7) + Math.sin(stutter * 1.9 + 2) * 0.5) * 0.035 * sw;
+    const sy = (Math.sin(stutter * 0.55 + 1) + Math.sin(stutter * 1.3) * 0.5) * 0.045 * sw;
+    const sr = Math.sin(stutter * 0.45 + 0.5) * 0.05 * sw;
+    const roll = -p.balance * 0.22 + sr + (Math.random() * 2 - 1) * p.shake * 0.14;
     const bob = Math.sin(p.bob / 0.7 * Math.PI) * 0.035 * Math.min(moving, 1.5);
     camera.position.set(p.x + rx * p.balance * 0.25, 1.65 + bob, p.z + rz * p.balance * 0.25);
     camera.rotation.set(p.pitch + sp + (Math.random() * 2 - 1) * p.shake * 0.07, p.yaw + sy, roll);
 
     camera.updateMatrixWorld();
-    const fwd = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
-    const faceLit = false;
 
-    // status: most urgent message first
+    // Action instructions live centrally; the corner only carries compact status.
     p.flashT -= dt;
-    const msgs = [];
-    if (faceLit) msgs.push('Torch in their face! Look away!');
-    if (state.light > 0) msgs.push('Your roommate is turning over. Freeze!');
-    if (state.hazeOn && !over) msgs.push('Everything is going hazy... press SPACE');
-    if (p.hicWarned && !over) msgs.push('A hiccup is coming... hold B');
-    if (p.flashT > 0) msgs.push(p.flashText);
-    statusEl.textContent = msgs[0] || '';
-    const attrs = [
-      p.shoes ? (p.shoeT > 0 ? 'Taking shoes off... ' + Math.round(p.shoeT / 1.8 * 100) + '%' : 'Shoes on: loud steps (hold E on the doormat)') : 'Shoes off',
-      p.phoneMuted ? 'Phone silenced' : p.muteT > 0 ? 'Silencing phone...' : 'Phone not silenced (M)'
-    ].join('\n');
+    statusEl.textContent = p.flashT > 0 ? p.flashText : '';
+    const attrs = (p.shoes ? 'Shoes on' : 'Shoes off') + ' · ' + (p.phoneMuted ? 'Phone silenced' : p.muteT > 0 ? 'Silencing phone…' : 'Phone on');
     if (attrsEl.textContent !== attrs) attrsEl.textContent = attrs;
+    updateGuidance();
     breathBar.style.width = p.breath + '%';
     applyHazeFallback();
 
@@ -1633,7 +1829,7 @@ window.HOUSE_ASSETS = {
       vec3 tap(vec2 uv) { return texture2D(tDiffuse, clamp(uv, 0.001, 0.999)).rgb; }
       void main() {
         vec2 uv = vUv + haze * 0.006 * vec2(sin(time * 1.3 + vUv.y * 6.0), cos(time * 1.1 + vUv.x * 5.0));
-        vec3 c = tap(uv);
+        vec2 offR = vec2(haze * 0.035 * sin(time * 2.1), haze * 0.01 * cos(time * 1.4)); vec2 offB = vec2(-haze * 0.025 * cos(time * 1.8), -haze * 0.015 * sin(time * 2.3)); vec3 c = vec3(tap(uv + offR).r, tap(uv).g, tap(uv + offB).b);
         if (haze > 0.001) {
           float r = haze * 0.006;
           vec3 b = vec3(0.0);
@@ -1656,7 +1852,7 @@ window.HOUSE_ASSETS = {
     try {
       const pr = renderer.getPixelRatio(), w = Math.max(1, canvas.clientWidth * pr), h = Math.max(1, canvas.clientHeight * pr);
       const rt = new THREE.WebGLRenderTarget(w, h, { type: THREE.HalfFloatType });
-      rt.samples = 4;
+      rt.samples = 0;
       composer = new THREE.EffectComposer(renderer, rt);
       basePass = new THREE.RenderPass(scene, camera);
       basePass.enabled = false;
@@ -1664,11 +1860,11 @@ window.HOUSE_ASSETS = {
       ssaoPass = new THREE.SSAOPass(scene, camera, w, h);
       ssaoPass.beautyRenderTarget.texture.type = THREE.HalfFloatType;
       ssaoPass.beautyRenderTarget.samples = 4;
-      ssaoPass.kernelRadius = 0.3;
+      ssaoPass.kernelRadius = 0.3; ssaoPass.enabled = false; basePass.enabled = true;
       ssaoPass.minDistance = 0.0002;
       ssaoPass.maxDistance = 0.008;
       composer.addPass(ssaoPass);
-      composer.addPass(new THREE.UnrealBloomPass(new THREE.Vector2(w, h), 0.35, 0.5, 0.8));
+      composer.addPass(new THREE.UnrealBloomPass(new THREE.Vector2(Math.floor(w/2), Math.floor(h/2)), 0.25, 0.5, 0.85));
       hazePass = new THREE.ShaderPass(HazeShader);
       composer.addPass(hazePass);
     } catch (e) { console.warn('post-processing unavailable', e); composer = null; }
@@ -1699,7 +1895,7 @@ window.HOUSE_ASSETS = {
     renderer.render(scene, camera);
   }
 
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.0));
   build();
   resize();
   setupPost();
