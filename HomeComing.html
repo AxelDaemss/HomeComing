@@ -94,6 +94,7 @@
     padding: 0.25rem 0.6rem; border: 2px solid var(--lamp); border-radius: 0.4rem;
     color: var(--lamp); background: #ffb86712; font-size: 1.6rem; line-height: 1.1;
   }
+  .action-key[hidden], #actionDetail[hidden] { display: none; }
   .action-key small { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; }
   .action-copy { flex: 1; min-width: 0; }
   #actionTitle { display: block; font-size: 1.3rem; font-weight: 400; line-height: 1.15; }
@@ -210,7 +211,7 @@
         <span><kbd data-key="fwd">W</kbd> / <kbd data-key="back">S</kbd> walk forward / back</span><span>Mouse / <kbd>↑ ↓ ← →</kbd> look around</span>
         <span>Hold <kbd>C</kbd> sneak · <kbd>Shift</kbd> run</span><span><kbd>Space</kbd> shake off the haze</span>
         <span>Hold <kbd>B</kbd> suppress a hiccup</span><span><kbd>H</kbd> silence your phone</span>
-        <span>Hold <kbd>E</kbd> remove shoes on the mat</span><span>Central prompts show what to do next</span>
+        <span>Hold <kbd>E</kbd> remove shoes on the mat</span><span>Central prompts show what to do next · <kbd>M</kbd> hide help</span>
       </div>
       <p class="keys">Follow the winding hallway past your roommate's room to your bedroom — the lit door at the very end — before the alarm in 90 seconds. Everything you bump into makes noise. Freeze when your roommate turns over. Headphones recommended.</p>
       <p class="diff-prompt" id="diffPrompt">How deeply does your roommate sleep tonight?</p>
@@ -292,6 +293,8 @@ window.HOUSE_ASSETS = {
   const ui = Object.fromEntries(['guidance', 'balanceHud', 'balanceGauge', 'balanceMarker', 'balanceState', 'balanceHint', 'balanceLeft', 'balanceRight', 'actionCard', 'actionVerb', 'actionKey', 'actionTitle', 'actionDetail', 'actionProgress', 'actionProgressBar', 'secondaryActions'].map(id => [id, document.getElementById(id)]));
   let lastActionSignature = '';
   let lastBalanceValue = null;
+  // M toggles all on-screen help (action prompts, balance gauge, control hints).
+  let helpHidden = false;
   const objectiveEl = document.getElementById('objective');
   const scareEl = document.getElementById('scare');
 
@@ -1442,10 +1445,10 @@ window.HOUSE_ASSETS = {
   const ZONES = [
     { id: 'room', test: (x, z) => x < 4.8 && z > 8.2, text: 'Wrong room! Get out before your roommate notices.' },
     { id: 'bed',  test: (x, z) => x > 13.1, text: 'Your bedroom. Almost there…' },
-    { id: 'A',    test: (x, z) => z < 6 && x < 1.1, text: 'Walk down the hall, then turn left at the end.' },
-    { id: 'B',    test: (x, z) => z < 8.1, text: 'Follow this hall to the end, then turn right.' },
-    { id: 'C',    test: (x, z) => z < 16, text: 'Sneak past your roommate’s door (on your right), then turn left.' },
-    { id: 'D',    test: () => true, text: 'Your bedroom: the lit door straight ahead.' }
+    { id: 'A',    test: (x, z) => z < 6 && x < 1.1, text: '' },
+    { id: 'B',    test: (x, z) => z < 8.1, text: '' },
+    { id: 'C',    test: (x, z) => z < 16, text: '' },
+    { id: 'D',    test: () => true, text: '' }
   ];
   const zoneOf = (x, z) => ZONES.find(zn => zn.test(x, z));
   // Waypoints the roommate runs along when he wakes up (corridor centre lines)
@@ -1984,6 +1987,7 @@ window.HOUSE_ASSETS = {
     if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Space'].includes(e.code)) e.preventDefault();
     if (e.code === 'KeyR' && state.over) restart();
     if (e.code === 'F2') { e.preventDefault(); debugBoxes = !debugBoxes; showHitboxes(debugBoxes); }
+    if ((e.key === 'm' || e.key === 'M') && !e.repeat) { helpHidden = !helpHidden; updateGuidance(); }
     if (started && !state.over && !state.caught && player) {
       if (e.code === 'Space' && !e.repeat && state.hazeOn) {
         state.hazeOn = false;
@@ -2071,10 +2075,9 @@ window.HOUSE_ASSETS = {
     const prompts = [];
     const add = (id, priority, key, verb, title, detail, tone = 'normal', progress = null) => prompts.push({ id, priority, key, verb, title, detail, tone, progress });
     const lean = Math.abs(p.balance);
-    if (lean > T.balanceWarning) {
+    if (lean >= T.balanceDanger) {
       const left = p.balance < 0;
-      const danger = lean >= T.balanceDanger;
-      add('balance', danger ? 100 : 65, left ? KEY.right : KEY.left, 'Tap', danger ? 'About to stumble — ' + (left ? 'lean right!' : 'lean left!') : 'Drifting ' + (left ? 'left' : 'right'), 'Use short taps. Release as the marker reaches the middle.', danger ? 'danger' : 'normal');
+      add('balance', 100, left ? KEY.right : KEY.left, 'Tap', 'About to stumble — ' + (left ? 'lean right!' : 'lean left!'), 'Use short taps. Release as the marker reaches the middle.', 'danger');
     }
     if (input.KeyB && p.breath <= 25) add('breath', 98, 'B', 'Release', 'Let yourself breathe', 'Release B to refill your breath and avoid a loud gasp.', 'danger');
     if (s.hazeOn) add('haze', s.haze > 0.85 ? 94 : 80, 'Space', 'Press', 'Shake off the haze', 'Clear your vision before you lose your footing.', s.haze > 0.85 ? 'danger' : 'normal');
@@ -2083,21 +2086,21 @@ window.HOUSE_ASSETS = {
     if (p.shoes && Math.hypot(p.x, p.z - 0.7) < 1.4) add('shoes', 40, 'E', 'Hold', p.shoeT > 0 ? 'Taking off your shoes…' : 'Take off your shoes', 'Stay still and centered on the doormat for quieter steps.', 'normal', p.shoeT / 1.8);
     if (!p.phoneMuted) add('phone', 30, 'H', p.muteT > 0 ? 'Wait' : 'Press', p.muteT > 0 ? 'Silencing your phone…' : 'Silence your phone', 'Keep your friends’ messages from waking your roommate.', 'normal', p.muteT > 0 ? 1 - p.muteT / 1.2 : null);
     if (p.x > 11.6 && p.x < 13.6 && p.z > 15.9 && p.z < 18.1) add('door', 55, 'C', 'Hold', 'Sneak through the lit door', 'Move slowly so your bedroom door does not squeak.');
-    add('walk', 0, KEY.fwd, 'Walk', zoneOf(p.x, p.z).text, 'Hold C to sneak. ' + KEY.left + ' / ' + KEY.right + ' sidestep and shift your balance.');
+    add('walk', 0, null, null, zoneOf(p.x, p.z).text, '');
     return prompts.sort((a, b) => b.priority - a.priority);
   }
 
   function updateGuidance() {
     const active = started && !state.over && !state.caught;
-    ui.guidance.hidden = !active;
-    ui.balanceHud.hidden = !active || !LEVEL.balance;
-    if (!active) return;
+    ui.guidance.hidden = !active || helpHidden;
+    ui.balanceHud.hidden = !active || !LEVEL.balance || helpHidden;
+    if (!active || helpHidden) return;
     const p = player, lean = Math.abs(p.balance);
     const side = p.balance < 0 ? 'left' : 'right';
     const level = lean >= T.balanceDanger ? 'danger' : lean > T.balanceSafe ? 'warning' : 'steady';
     ui.balanceHud.dataset.level = level;
     ui.balanceMarker.style.left = (50 + p.balance * 50) + '%';
-    ui.balanceState.textContent = level === 'steady' ? 'Steady' : (level === 'danger' ? 'Tipping ' : 'Leaning ') + side;
+    ui.balanceState.textContent = lean < 0.05 ? 'Steady' : (level === 'danger' ? 'Tipping ' : 'Leaning ') + side;
     ui.balanceHint.textContent = lean > T.balanceSafe ? (p.balance < 0 ? 'Tap ' + KEY.right + ' →' : '← Tap ' + KEY.left) + ' to return to the middle' : 'Keep the marker in the middle · use short ' + KEY.left + ' / ' + KEY.right + ' taps';
     ui.balanceLeft.dataset.recommended = String(p.balance > T.balanceSafe);
     ui.balanceRight.dataset.recommended = String(p.balance < -T.balanceSafe);
@@ -2117,10 +2120,13 @@ window.HOUSE_ASSETS = {
     if (signature !== lastActionSignature) {
       lastActionSignature = signature;
       ui.actionCard.dataset.tone = main.tone;
-      ui.actionKey.textContent = main.key;
-      ui.actionVerb.textContent = main.verb;
+      ui.actionCard.hidden = !main.title;
+      ui.actionKey.parentElement.hidden = !main.key;
+      ui.actionKey.textContent = main.key || '';
+      ui.actionVerb.textContent = main.verb || '';
       ui.actionTitle.textContent = main.title;
       ui.actionDetail.textContent = main.detail;
+      ui.actionDetail.hidden = !main.detail;
       ui.secondaryActions.replaceChildren(...secondary.map(a => {
         const row = document.createElement('div'); row.className = 'secondary-action';
         const key = document.createElement('kbd'); key.textContent = a.verb + ' ' + a.key;
@@ -2462,6 +2468,7 @@ window.HOUSE_ASSETS = {
     if (attrsEl.textContent !== attrs) attrsEl.textContent = attrs;
     const goal = zoneOf(p.x, p.z).text;
     if (objectiveEl.textContent !== goal) objectiveEl.textContent = goal;
+    objectiveEl.hidden = !goal;
     updateGuidance();
     breathBar.style.width = p.breath + '%';
     applyHazeFallback();
